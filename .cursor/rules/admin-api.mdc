@@ -1,0 +1,66 @@
+---
+description: AdminAPI — ASP.NET Core Web API conventions
+globs: AdminAPI/**/*
+alwaysApply: false
+---
+
+# AdminAPI
+
+## Stack
+
+ASP.NET Core Web API (.NET 8), EF Core (code-first), JWT Bearer, AutoMapper, FluentValidation, Swagger/OpenAPI.
+
+## Structure
+
+```
+AdminAPI/
+├── Controllers/Admin{Name}Controller.cs
+├── DTOs/{Name}/, DTOs/Common/
+├── Services/Interfaces/ + implementations
+├── Repositories/Interfaces/ + implementations
+├── Models/, Data/AdminDbContext.cs
+├── Middleware/ExceptionMiddleware.cs
+├── Mapping/MappingProfile.cs
+├── Validators/
+└── Program.cs, appsettings.json
+```
+
+## Rules
+
+- No business logic in controllers — services only
+- No raw SQL — EF Core only
+- No hardcoded connection strings — `appsettings.json`
+- No inline DTO mapping — AutoMapper profiles only
+- Always return `ApiResponseDto<T>`; global errors via `ExceptionMiddleware` only
+- Async all the way: `async Task<T>`
+- One class per file; **max 150 lines**
+- FluentValidation on all POST/PUT bodies
+
+## Response Shapes
+
+```csharp
+public class ApiResponseDto<T> {
+  public bool Success { get; set; }
+  public string Message { get; set; }
+  public T Data { get; set; }
+  public List<string> Errors { get; set; }
+}
+
+public class PagedResultDto<T> {
+  public List<T> Items { get; set; }
+  public int TotalCount { get; set; }
+  public int PageNumber { get; set; }
+  public int PageSize { get; set; }
+  public int TotalPages { get; set; }
+}
+```
+
+## Endpoints
+
+| Action | Method | Route |
+|--------|--------|-------|
+| Paged list | GET | `api/admin{name}` |
+| Get one | GET | `api/admin{name}/{id}` |
+| Create | POST | `api/admin{name}` |
+| Update | PUT | `api/admin{name}/{id}` |
+| Delete | DELETE | `api/admin{name}/{id}` |

@@ -1,0 +1,195 @@
+# Runs prebuilt images. The server only needs this file + .env.
+# To build locally instead:  docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: masged-traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=false
+      - --log.level=INFO
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=masged-net
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-letsencrypt:/letsencrypt
+    networks:
+      - masged-net
+
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: masged-sql
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+    volumes:
+      - sql-data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    networks:
+      - masged-net
+
+  admin-api:
+    image: ${IMAGE_REGISTRY:-ghcr.io/CHANGE_ME}/masged-admin-api:${IMAGE_TAG:-latest}
+    container_name: masged-admin-api
+    restart: unless-stopped
+    depends_on:
+      sql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sql;Database=NewMasgedTeacherAPIDB;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False"
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: AdminAPI
+      Jwt__Audience: AdminPanelUI
+      PublicSite__BaseUrl: "https://${DOMAIN}"
+      Cors__Origins__0: "https://${DOMAIN}"
+      Cors__Origins__1: "https://www.${DOMAIN}"
+      Cors__Origins__2: "https://admin.${DOMAIN}"
+      Deployment__Domain: ${DOMAIN}
+      Deployment__EnsureDatabase: "true"
+      Wasender__ApiToken: ${WASENDER_API_TOKEN}
+      Wasender__SessionApiKey: ${WASENDER_SESSION_API_KEY}
+      Agora__AppId: ${AGORA_APP_ID}
+      Agora__AppCertificate: ${AGORA_APP_CERTIFICATE}
+      Firebase__Enabled: ${FIREBASE_ENABLED}
+      Firebase__ProjectId: ${FIREBASE_PROJECT_ID:-}
+      Firebase__ServiceAccountJsonPath: /app/secrets/firebase-service-account.json
+    volumes:
+      - admin-uploads:/app/Uploads
+      - admin-files:/app/FilesManager
+      - admin-logs:/app/Logs
+      # Drop firebase-service-account.json here to enable push notifications
+      - ./secrets:/app/secrets:ro
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=masged-net
+      - traefik.http.routers.admin-api.rule=Host(`admin.${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/Uploads`) || PathPrefix(`/FilesManager`) || PathPrefix(`/qcf-fonts`))
+      - traefik.http.routers.admin-api.entrypoints=websecure
+      - traefik.http.routers.admin-api.tls.certresolver=letsencrypt
+      - traefik.http.routers.admin-api.priority=100
+      - traefik.http.services.admin-api.loadbalancer.server.port=8080
+    networks:
+      - masged-net
+
+  mobile-api:
+    image: ${IMAGE_REGISTRY:-ghcr.io/CHANGE_ME}/masged-mobile-api:${IMAGE_TAG:-latest}
+    container_name: masged-mobile-api
+    restart: unless-stopped
+    depends_on:
+      sql:
+        condition: service_healthy
+      admin-api:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sql;Database=NewMasgedTeacherAPIDB;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False"
+      ApiSettings__MediaBaseUrl: "https://admin.${DOMAIN}/"
+      ApiSettings__Jwt__Key: ${MOBILE_JWT_KEY}
+      ApiSettings__Jwt__Issuer: MasgedParentMobileAPI
+      ApiSettings__Jwt__Audience: MasgedParentApp
+      ApiSettings__Jwt__ExpireMinutes: "10080"
+      TeacherJwt__Key: ${TEACHER_JWT_KEY}
+      TeacherJwt__Issuer: MasgedTeacherMobileAPI
+      TeacherJwt__Audience: MasgedTeacherMobileApp
+      Chat__InternalBroadcastKey: ${CHAT_INTERNAL_KEY}
+      StudentQr__EncryptionKey: ${STUDENT_QR_KEY}
+      Firebase__Enabled: ${FIREBASE_ENABLED}
+      Firebase__ProjectId: ${FIREBASE_PROJECT_ID:-}
+      Firebase__ServiceAccountJsonPath: /app/secrets/firebase-service-account.json
+      Agora__AppId: ${AGORA_APP_ID}
+      Agora__AppCertificate: ${AGORA_APP_CERTIFICATE}
+    volumes:
+      - mobile-uploads:/app/Uploads
+      # Drop firebase-service-account.json here to enable push notifications
+      - ./secrets:/app/secrets:ro
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=masged-net
+      - traefik.http.routers.mobile-api.rule=Host(`api.${DOMAIN}`)
+      - traefik.http.routers.mobile-api.entrypoints=websecure
+      - traefik.http.routers.mobile-api.tls.certresolver=letsencrypt
+      - traefik.http.services.mobile-api.loadbalancer.server.port=8080
+    networks:
+      - masged-net
+
+  admin-ui:
+    image: ${IMAGE_REGISTRY:-ghcr.io/CHANGE_ME}/masged-admin-ui:${IMAGE_TAG:-latest}
+    container_name: masged-admin-ui
+    restart: unless-stopped
+    depends_on:
+      - admin-api
+    environment:
+      APP_API_BASE_URL: "https://admin.${DOMAIN}/api"
+      APP_UPLOADS_BASE_URL: "https://admin.${DOMAIN}"
+      APP_PUBLIC_SITE_URL: "https://${DOMAIN}"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=masged-net
+      - traefik.http.routers.admin-ui.rule=Host(`admin.${DOMAIN}`)
+      - traefik.http.routers.admin-ui.entrypoints=websecure
+      - traefik.http.routers.admin-ui.tls.certresolver=letsencrypt
+      - traefik.http.routers.admin-ui.priority=1
+      - traefik.http.services.admin-ui.loadbalancer.server.port=80
+    networks:
+      - masged-net
+
+  public-ui:
+    image: ${IMAGE_REGISTRY:-ghcr.io/CHANGE_ME}/masged-public-ui:${IMAGE_TAG:-latest}
+    container_name: masged-public-ui
+    restart: unless-stopped
+    depends_on:
+      - admin-api
+    environment:
+      APP_API_BASE_URL: "https://admin.${DOMAIN}/api"
+      APP_UPLOADS_BASE_URL: "https://admin.${DOMAIN}"
+      APP_PUBLIC_SITE_URL: "https://${DOMAIN}"
+      APP_STORE_URL: ${APP_STORE_URL:-}
+      APP_GOOGLE_PLAY_URL: ${GOOGLE_PLAY_URL:-}
+      APP_MOBILE_BANNER_IMAGE: ${MOBILE_APP_BANNER_IMAGE:-}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=masged-net
+      - traefik.http.routers.public-ui.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)
+      - traefik.http.routers.public-ui.entrypoints=websecure
+      - traefik.http.routers.public-ui.tls.certresolver=letsencrypt
+      - traefik.http.services.public-ui.loadbalancer.server.port=80
+    networks:
+      - masged-net
+
+networks:
+  masged-net:
+    name: masged-net
+    driver: bridge
+
+volumes:
+  sql-data:
+  traefik-letsencrypt:
+  admin-uploads:
+  admin-files:
+  admin-logs:
+  mobile-uploads:

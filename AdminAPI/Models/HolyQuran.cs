@@ -1,0 +1,32 @@
+namespace AdminAPI.Models;
+
+
+
+public class HolyQuran
+
+{
+
+    public int Id { get; set; }
+
+    public int Jozz { get; set; }
+
+    public int SuraNo { get; set; }
+
+    public string? SuraNameAr { get; set; }
+
+    public int Page { get; set; }
+
+    public int? LineStart { get; set; }
+
+    public int? LineEnd { get; set; }
+
+    public int AyaNo { get; set; }
+
+    public string? AyaTextEmlaey { get; set; }
+
+    public byte HezbNo { get; set; }
+
+    public byte HezbQuarter { get; set; }
+
+}
+

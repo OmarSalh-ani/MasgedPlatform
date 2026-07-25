@@ -1,0 +1,12 @@
+namespace AdminAPI.DTOs.ContactInfo;
+
+public class SaveContactInfoRequestDto
+{
+    public string ContactType { get; set; } = string.Empty;
+
+    public string? Label { get; set; }
+
+    public string Value { get; set; } = string.Empty;
+
+    public int SortOrder { get; set; }
+}

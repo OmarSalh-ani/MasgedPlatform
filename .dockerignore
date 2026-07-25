@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/build/
+**/.git/
+**/.vs/
+**/.idea/
+**/publish/
+**/ParentApp/
+**/*.md
+**/.env
+**/.env.*
+!**/.env.example

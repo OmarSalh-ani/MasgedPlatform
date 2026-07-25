@@ -1,0 +1,246 @@
+﻿{
+   "CodeGenerationMode": 4,
+   "ContextClassName": "NewMasgedTeacherAPIDBContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "MinimumProductVersion": "2.6.1130",
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Models",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "MasgedParentMobileAPI",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "[dbo].[AboutAssociation]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Activity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[AppSetting]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CardAttendance]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CircleAttendance]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CircleDay]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CircleDeparture]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CommunicationNotifications]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Competition]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ContactInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[DynamicForms]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Expensives]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[FilesManagers]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[FormFieldOptions]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[FormFields]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[FormResponses]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[FormResponseValues]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[HeroSlide]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[HolyQuran]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[MeetingsInfo]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Mosque]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[NewsItem]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ParentFollowup]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ParentNotes]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ParentPanelLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PlanLevel]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[QuranAyah]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[QuranCircle]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[QuranSurah]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ReadyPlan]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[RegisterForm]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[SocialLink]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[StudentMemorizingCard]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[StudentPlan]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[StudentPlanItemLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[StudentPlanMemorizing]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[StudentPlanRevise]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[StudentTest]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Teacher]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TeacherAttendance]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TeacherMapLocation]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TeacherNotes]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TeachersAdminNotes]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TeacherSalary]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestBody]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TestHead]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[whatsapp_temp_table]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[WhatsappPreConfiguredMessages]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[WhatsAppSessionIds]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[WomanActivity]",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseInternalAccessModifiersForSprocsAndFunctions": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false
+}

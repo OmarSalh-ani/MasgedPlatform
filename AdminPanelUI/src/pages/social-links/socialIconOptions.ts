@@ -1,0 +1,15 @@
+export const SOCIAL_ICON_OPTIONS = [
+  { iconClass: 'fab fa-facebook-f', title: 'فيسبوك' },
+  { iconClass: 'fab fa-twitter', title: 'تويتر' },
+  { iconClass: 'fab fa-instagram', title: 'انستغرام' },
+  { iconClass: 'fab fa-whatsapp', title: 'واتساب' },
+  { iconClass: 'fab fa-youtube', title: 'يوتيوب' },
+  { iconClass: 'fab fa-linkedin-in', title: 'لينكد إن' },
+  { iconClass: 'fab fa-telegram', title: 'تيليجرام' },
+  { iconClass: 'fab fa-tiktok', title: 'تيك توك' },
+  { iconClass: 'fab fa-snapchat-ghost', title: 'سناب شات' },
+  { iconClass: 'fab fa-pinterest-p', title: 'بينتريست' },
+  { iconClass: 'fab fa-discord', title: 'ديسكورد' },
+  { iconClass: 'fab fa-twitch', title: 'تويتش' },
+  { iconClass: 'fas fa-link', title: 'رابط عام' },
+] as const

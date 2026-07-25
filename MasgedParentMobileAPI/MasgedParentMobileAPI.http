@@ -1,0 +1,6 @@
+@MasgedParentMobileAPI_HostAddress = http://localhost:5100
+
+GET {{MasgedParentMobileAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

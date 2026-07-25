@@ -1,0 +1,44 @@
+# Secrets — never commit
+.env
+**/.env
+!**/.env.example
+
+# Google service account private keys — supply at runtime, see DOCKER_GUIDE.md
+**/firebase-service-account.json
+
+# Real local credentials live here; committed appsettings.json holds placeholders
+**/appsettings.Development.json
+**/secrets/
+
+# Node
+**/node_modules/
+**/dist/
+**/build/
+
+# .NET
+**/bin/
+**/obj/
+**/publish/
+AdminAPI/_buildcheck/
+
+# Runtime data — served from Docker volumes, not source control
+AdminAPI/Uploads/
+AdminAPI/FilesManager/
+AdminAPI/Logs/
+MasgedParentMobileAPI/Uploads/
+
+# Flutter app lives in its own repo: OmarSalh-ani/Masged-Mubarak-Flutter
+ParentApp/
+
+# Flutter / Dart
+.dart_tool/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+
+# IDE / OS
+.vs/
+.idea/
+*.user
+Thumbs.db
+.DS_Store

@@ -1,0 +1,158 @@
+import {
+  BarChart3,
+  Bell,
+  BookOpen,
+  CalendarCheck,
+  CalendarDays,
+  Coins,
+  FolderOpen,
+  Globe,
+  GraduationCap,
+  Home,
+  Images,
+  Info,
+  Activity,
+  Building2,
+  GitBranch,
+  Layers,
+  List,
+  ListOrdered,
+  LogOut,
+  MessageSquare,
+  Newspaper,
+  QrCode,
+  Settings,
+  Share2,
+  Star,
+  Trophy,
+  Users,
+  Venus,
+  Wallet,
+} from 'lucide-react'
+import type { AdminNavEntry } from '@/types/adminNav'
+
+const adminOnly = { adminOnly: true } as const
+
+export const adminNavEntries: AdminNavEntry[] = [
+  { type: 'section', label: 'نظرة عامة' },
+  { type: 'link', to: '/home', label: 'الرئيسية', icon: Home, visibility: adminOnly },
+  { type: 'link', to: '/othaimin-center', label: 'مركز ابن عثيمين', icon: Building2, visibility: adminOnly },
+  { type: 'link', to: '/statistics', label: 'الإحصائيات', icon: BarChart3 },
+  { type: 'link', to: '/settings', label: 'الإعدادات', icon: Settings, visibility: adminOnly },
+  { type: 'link', to: '/integrations', label: 'التكاملات', icon: Share2, visibility: adminOnly },
+  { type: 'link', to: '/work-days', label: 'أيام العمل', icon: CalendarDays, visibility: adminOnly },
+
+  { type: 'section', label: 'الطلاب والخطط' },
+  { type: 'link', to: '/current-students-plans', label: 'خطط الطلاب الحالية', icon: GitBranch },
+  { type: 'link', to: '/plan-levels', label: 'مستويات الخطة', icon: Layers },
+  {
+    type: 'link',
+    to: '/parent-panel-log-statistics',
+    label: 'إحصائيات أولياء الأمور',
+    icon: Users,
+    visibility: { hideForGirlTeacher: true },
+  },
+
+  { type: 'section', label: 'التقارير' },
+  { type: 'link', to: '/memorization-revision-report', label: 'تقرير الحفظ والمراجعة', icon: BookOpen },
+  { type: 'link', to: '/special-students-report', label: 'تقرير الطلاب المميزين', icon: Star },
+  { type: 'link', to: '/tests', label: 'تقرير الأختبارات', icon: List },
+
+  { type: 'section', label: 'الحلقات والمعلمين' },
+  { type: 'link', to: '/circles', label: 'إدارة حلقات القرآن الكريم', icon: BookOpen },
+  {
+    type: 'group',
+    id: 'teachers',
+    label: 'المعلمين',
+    icon: GraduationCap,
+    autoExpandPaths: ['teachers', 'teacher-salaries', 'teachers-attendance', 'send-notes'],
+    children: [
+      {
+        type: 'link',
+        to: '/teachers',
+        label: 'إدارة معلمين حلقات القرآن الكريم',
+        icon: GraduationCap,
+        visibility: adminOnly,
+      },
+      { type: 'link', to: '/teacher-salaries', label: 'رواتب المعلمين', icon: Wallet },
+      { type: 'link', to: '/teachers-attendance', label: 'حضور المعلمين', icon: CalendarCheck },
+      { type: 'link', to: '/send-notes', label: 'أرسال ملاحظات للمعلمين', icon: MessageSquare },
+    ],
+  },
+
+  { type: 'section', label: 'المالية والملفات' },
+  { type: 'link', to: '/expensives', label: 'إدارة المصروفات', icon: Coins, visibility: adminOnly },
+  { type: 'link', to: '/files-manager', label: 'إدارة الملفات', icon: FolderOpen, visibility: adminOnly },
+
+  { type: 'section', label: 'المحتوى والموقع' },
+  {
+    type: 'group',
+    id: 'mainSite',
+    label: 'الموقع الرئيسي',
+    icon: Globe,
+    autoExpandPaths: [
+      'hero-slides',
+      'mosques',
+      'competitions',
+      'news',
+      'activities',
+      'about',
+      'social-links',
+      'womans-activities',
+    ],
+    children: [
+      { type: 'link', to: '/hero-slides', label: 'صور الهيرو', icon: Images },
+      { type: 'link', to: '/mosques', label: 'مساجدنا', icon: Building2, visibility: adminOnly },
+      { type: 'link', to: '/competitions', label: 'مسابقاتنا', icon: Trophy, visibility: adminOnly },
+      { type: 'link', to: '/news', label: 'آخر الأخبار', icon: Newspaper, visibility: adminOnly },
+      { type: 'link', to: '/activities', label: 'الأنشطة', icon: Activity, visibility: adminOnly },
+      { type: 'link', to: '/about', label: 'عن الجمعية', icon: Info, visibility: adminOnly },
+      { type: 'link', to: '/social-links', label: 'روابط التواصل', icon: Share2, visibility: adminOnly },
+      { type: 'link', to: '/womans-activities', label: 'إدارة الانشطة', icon: Venus },
+    ],
+  },
+
+  { type: 'section', label: 'التواصل والإشعارات' },
+  {
+    type: 'group',
+    id: 'notifications',
+    label: 'الإشعارات',
+    icon: Bell,
+    autoExpandPaths: ['push-notifications'],
+    children: [
+      {
+        type: 'link',
+        to: '/push-notifications',
+        label: 'إشعارات التطبيق',
+        icon: Bell,
+        visibility: adminOnly,
+      },
+    ],
+  },
+  {
+    type: 'group',
+    id: 'whatsapp',
+    label: 'الواتساب',
+    icon: MessageSquare,
+    autoExpandPaths: ['whatsapp-sender', 'whatsapp-pending', 'whatsapp-config', 'whatsapp-qr'],
+    children: [
+      { type: 'link', to: '/whatsapp-sender', label: 'رسائل الواتساب', icon: MessageSquare },
+      { type: 'link', to: '/whatsapp-pending', label: 'عرض رسائل الواتساب', icon: ListOrdered },
+      { type: 'link', to: '/whatsapp-config', label: 'إعدادات الرسائل', icon: Settings },
+      {
+        type: 'link',
+        to: '/whatsapp-qr',
+        label: 'ربط الواتساب',
+        icon: MessageSquare,
+        visibility: { hideForGirlTeacherAdmin: true },
+      },
+    ],
+  },
+  { type: 'link', to: '/qr-generator', label: 'مولد رمز QR', icon: QrCode },
+]
+
+export const adminLogoutNavItem = {
+  type: 'logout' as const,
+  label: 'تسجيل الخروج',
+  icon: LogOut,
+}

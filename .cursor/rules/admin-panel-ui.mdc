@@ -1,0 +1,71 @@
+---
+description: AdminPanelUI — React + Vite + shadcn/ui conventions
+globs: AdminPanelUI/**/*
+alwaysApply: false
+---
+
+# AdminPanelUI
+
+## Stack
+
+React 18, Vite, TypeScript (strict, no `any`), shadcn/ui, Tailwind, React Router v6, TanStack Query v5, React Hook Form + Zod, Axios, Lucide React.
+
+## Structure
+
+```
+src/
+├── pages/{domain}/          # {Name}Page.tsx, {Name}Table.tsx, {Name}Filters.tsx, dialogs/
+├── components/shared/       # Only if used on 2+ pages
+├── services/{name}Service.ts
+├── hooks/use{Name}.ts
+├── types/{name}.ts
+├── lib/axios.ts, utils.ts, constants.ts
+├── layouts/AdminLayout.tsx
+└── router/index.tsx
+```
+
+## Rules
+
+- One component per file; **max 150 lines** — split before exceeding
+- No logic in JSX; no API calls in components; no server state in components
+- Dialogs in `dialogs/` subfolder under the page folder
+- All forms: RHF + Zod + shadcn `Form*` — mirror C# validation exactly
+- Server state: React Query only (`useQuery` / `useMutation`); invalidate after mutations
+- Loading: `Skeleton`; errors: `Alert` destructive
+- Tables: shadcn `Table` + shared `DataTablePagination`
+- Filter/search state on page component, passed as props
+- JWT in `localStorage`; Axios interceptor; protected routes → `/login`
+- shadcn/ui only; Tailwind utilities only; no inline `style={{}}`
+- Responsive: Tailwind breakpoints; sidebar → `Sheet` on mobile; tables `overflow-x-auto`
+
+## Naming
+
+| Type | Pattern |
+|------|---------|
+| Page folder | `PascalCase/` |
+| Page entry | `{Name}Page.tsx` |
+| Table | `{Name}Table.tsx` |
+| Filters | `{Name}Filters.tsx` |
+| Dialog | `{Action}{Name}Dialog.tsx` |
+| Service | `{name}Service.ts` |
+| Hook | `use{Name}.ts` |
+| Types | `types/{name}.ts` |
+
+## API Types (must match AdminAPI)
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  errors: string[];
+}
+
+interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+}
+```

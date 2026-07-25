@@ -1,0 +1,47 @@
+---
+description: AdminPanel migration workflow — AdminAPI + AdminPanelUI from WebForms
+alwaysApply: true
+---
+
+# AdminPanel Migration — Overview
+
+## Projects
+
+| Project | Role |
+|---------|------|
+| **MasgedParentMobileAPI** | .NET API for mobile app (separate) |
+| **AdminPanel** | Legacy ASP.NET WebForms — source of truth |
+| **AdminAPI** | New ASP.NET Core Web API (.NET 8) |
+| **AdminPanelUI** | New React + Vite + shadcn/ui frontend |
+
+## Agent Role
+
+- User provides `.aspx` + `.aspx.cs` **one screen at a time**
+- Read C# codebehind first; implement equivalent in **AdminAPI** and **AdminPanelUI**
+- **Never assume** fields, validations, or flows — derive from provided C# only
+- **Ask for files** before starting a new screen if not provided
+- **Check existing codebase** for reusable components, hooks, services, patterns — follow strictly
+
+## Per-Screen Deliverables
+
+**AdminPanelUI:** `{Name}Page.tsx`, `{Name}Table.tsx`, `{Name}Filters.tsx` (if applicable), `dialogs/`, `services/{name}Service.ts`, `hooks/use{Name}.ts`, `types/{name}.ts`
+
+**AdminAPI:** `Admin{Name}Controller.cs`, `DTOs/{Name}/`, `I{Name}Service` + `{Name}Service`, `I{Name}Repository` + `{Name}Repository`, `Validators/`, AutoMapper in `MappingProfile.cs`
+
+## Behavior
+
+- Match WebForms **exactly** — same fields, validations, business logic, flows
+- No extra features or UX improvements unless explicitly asked
+- Zod schemas mirror C# codebehind validation exactly
+- API response shapes match TypeScript types exactly
+- Pagination matches original GridView page size — **server-side**
+
+## Standard Endpoints
+
+| Action | Method | Route | Returns |
+|--------|--------|-------|---------|
+| List (paged) | GET | `api/admin{name}` | `PagedResultDto<T>` |
+| Get one | GET | `api/admin{name}/{id}` | `ApiResponseDto<T>` |
+| Create | POST | `api/admin{name}` | `ApiResponseDto<T>` |
+| Update | PUT | `api/admin{name}/{id}` | `ApiResponseDto<T>` |
+| Delete | DELETE | `api/admin{name}/{id}` | `ApiResponseDto<bool>` |

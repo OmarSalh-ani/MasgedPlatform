@@ -1,0 +1,580 @@
+.parents-followup-page {
+
+  font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  background-color: #f5f5f5;
+
+  margin: 0;
+
+  padding: 20px;
+
+  direction: rtl;
+
+  min-height: 100vh;
+
+}
+
+
+
+.parents-followup-page .container {
+
+  max-width: 800px;
+
+  margin: 0 auto;
+
+  background-color: white;
+
+  border: 2px solid #000;
+
+  position: relative;
+
+}
+
+
+
+.parents-followup-page .header {
+
+  text-align: center;
+
+  padding: 20px;
+
+  display: flex;
+
+  flex-direction: row-reverse;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+}
+
+
+
+.parents-followup-page .logo-dual {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+}
+
+
+
+.parents-followup-page .logo-dual img {
+
+  max-height: 75px;
+
+  max-width: 110px;
+
+  object-fit: contain;
+
+}
+
+
+
+.parents-followup-page .photo-box {
+
+  width: 80px;
+
+  height: 120px;
+
+  aspect-ratio: 4 / 6;
+
+  border: 2px solid #000;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  flex-direction: column;
+
+  font-size: 12px;
+
+  cursor: pointer;
+
+  overflow: hidden;
+
+  background-color: #f9f9f9;
+
+  flex-shrink: 0;
+
+}
+
+
+
+.parents-followup-page .photo-box.has-image {
+
+  padding: 0;
+
+}
+
+
+
+.parents-followup-page .photo-preview {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: cover;
+
+}
+
+
+
+.parents-followup-page .photo-upload-text {
+
+  text-align: center;
+
+  line-height: 1.2;
+
+  color: red;
+
+}
+
+
+
+.parents-followup-page .photo-upload-hint {
+
+  font-size: 10px;
+
+  margin-top: 5px;
+
+}
+
+
+
+.parents-followup-page .form-title {
+
+  background-color: #2e86ab;
+
+  color: white;
+
+  text-align: center;
+
+  padding: 10px;
+
+  font-size: 18px;
+
+  font-weight: bold;
+
+  margin: 20px 0;
+
+  text-decoration: underline;
+
+}
+
+
+
+.parents-followup-page .form-content {
+
+  padding: 20px;
+
+}
+
+
+
+.parents-followup-page .form-row {
+
+  margin-bottom: 15px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+}
+
+
+
+.parents-followup-page .form-row label {
+
+  font-size: 14px;
+
+  white-space: nowrap;
+
+}
+
+
+
+.parents-followup-page .form-input {
+
+  border: none;
+
+  border-bottom: 1px dotted #000;
+
+  flex-grow: 1;
+
+  height: 28px;
+
+  background: transparent;
+
+  font-size: 14px;
+
+  text-align: right;
+
+  padding: 2px 5px;
+
+  outline: none;
+
+}
+
+
+
+.parents-followup-page .form-input:focus {
+
+  border-bottom: 2px solid #2e86ab;
+
+}
+
+
+
+.parents-followup-page .radio-group {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 20px;
+
+  flex-wrap: wrap;
+
+}
+
+
+
+.parents-followup-page .radio-item {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  font-size: 14px;
+
+}
+
+
+
+.parents-followup-page .section-header {
+
+  background-color: #2e86ab;
+
+  color: white;
+
+  text-align: center;
+
+  padding: 8px;
+
+  font-size: 14px;
+
+  font-weight: bold;
+
+  margin: 20px 0 15px;
+
+}
+
+
+
+.parents-followup-page .form-row-medical {
+
+  margin-bottom: 20px;
+
+}
+
+
+
+.parents-followup-page .medical-question {
+
+  text-align: right;
+
+  margin-bottom: 10px;
+
+  font-size: 14px;
+
+}
+
+
+
+.parents-followup-page .medical-details {
+
+  margin-top: 10px;
+
+  padding-right: 20px;
+
+}
+
+
+
+.parents-followup-page .notice-text {
+
+  font-size: 14px;
+
+  line-height: 1.6;
+
+  margin: 0;
+
+}
+
+
+
+.parents-followup-page .submit-btn {
+
+  background-color: #2e86ab;
+
+  color: white;
+
+  padding: 12px 30px;
+
+  border: none;
+
+  border-radius: 5px;
+
+  font-size: 16px;
+
+  cursor: pointer;
+
+  margin: 20px auto;
+
+  display: block;
+
+}
+
+
+
+.parents-followup-page .submit-btn:hover {
+
+  background-color: #1a5f7a;
+
+}
+
+
+
+.parents-followup-page .submit-btn:disabled {
+
+  opacity: 0.6;
+
+  cursor: not-allowed;
+
+}
+
+
+
+.parents-followup-page .field-error {
+
+  color: #dc3545;
+
+  font-size: 12px;
+
+  margin-top: 4px;
+
+}
+
+
+
+.parents-followup-page .pdf-btn {
+
+  display: block;
+
+  margin: 0 auto 16px;
+
+  background-color: #2e86ab;
+
+  color: white;
+
+  padding: 10px 25px;
+
+  border: none;
+
+  border-radius: 5px;
+
+  cursor: pointer;
+
+}
+
+
+
+.parents-followup-page .hidden {
+
+  display: none;
+
+}
+
+
+
+.parents-followup-alert {
+
+  max-width: 28rem;
+
+  margin: 0 auto;
+
+  padding: 1rem;
+
+  border-radius: 0.5rem;
+
+  text-align: center;
+
+}
+
+
+
+.parents-followup-alert--error {
+
+  background-color: #fef2f2;
+
+  border: 1px solid #fecaca;
+
+  color: #991b1b;
+
+}
+
+
+
+.parents-followup-skeleton {
+
+  max-width: 28rem;
+
+  height: 10rem;
+
+  margin: 0 auto;
+
+  border-radius: 0.5rem;
+
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+
+  background-size: 200% 100%;
+
+  animation: parents-followup-shimmer 1.2s infinite;
+
+}
+
+
+
+@keyframes parents-followup-shimmer {
+
+  0% {
+
+    background-position: 200% 0;
+
+  }
+
+
+
+  100% {
+
+    background-position: -200% 0;
+
+  }
+
+}
+
+
+
+.parents-followup-dialog-overlay {
+
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 1000;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background-color: rgb(0 0 0 / 50%);
+
+}
+
+
+
+.parents-followup-dialog {
+
+  min-width: 300px;
+
+  padding: 2rem;
+
+  border-radius: 0.5rem;
+
+  background-color: white;
+
+  text-align: center;
+
+  box-shadow: 0 10px 25px rgb(0 0 0 / 15%);
+
+}
+
+
+
+.parents-followup-dialog h3 {
+
+  margin: 0 0 1rem;
+
+  font-size: 1.125rem;
+
+  font-weight: 700;
+
+  color: #2e86ab;
+
+}
+
+
+
+.parents-followup-dialog p {
+
+  margin: 0 0 1.25rem;
+
+  line-height: 1.6;
+
+}
+
+
+
+@media (max-width: 600px) {
+
+  .parents-followup-page {
+
+    padding: 5px;
+
+  }
+
+
+
+  .parents-followup-page .container {
+
+    max-width: 100%;
+
+  }
+
+
+
+  .parents-followup-page .form-row {
+
+    flex-direction: column;
+
+    align-items: stretch;
+
+  }
+
+
+
+  .parents-followup-page .radio-group {
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+  }
+
+}
+

@@ -1,0 +1,233 @@
+using AdminAPI.Configuration;
+using AdminAPI.Data;
+using AdminAPI.DTOs.MasgedSettings;
+using AdminAPI.Models;
+using AdminAPI.Repositories.Interfaces;
+using AdminAPI.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+
+namespace AdminAPI.Services;
+
+public class MasgedSettingsService(
+    IMasgedSettingsRepository repository,
+    AdminDbContext db,
+    IHttpContextAccessor httpContextAccessor,
+    IOptions<TeacherUploadOptions> uploadOptions,
+    IOptions<DeploymentOptions> deploymentOptions) : IMasgedSettingsService
+{
+    public async Task<MasgedSettingsDto?> GetAsync(CancellationToken cancellationToken = default)
+    {
+        var setting = await repository.GetFirstAsync(cancellationToken);
+        return setting is null ? null : MapToDto(setting);
+    }
+
+    public async Task<SetupStatusDto> GetSetupStatusAsync(CancellationToken cancellationToken = default)
+    {
+        var setting = await repository.GetFirstAsync(cancellationToken);
+        var envDomain = deploymentOptions.Value.Domain?.Trim();
+        return new SetupStatusDto
+        {
+            SetupCompleted = setting?.SetupCompleted == true,
+            Domain = string.IsNullOrWhiteSpace(setting?.Domain)
+                ? (string.IsNullOrWhiteSpace(envDomain) ? null : envDomain)
+                : setting.Domain,
+        };
+    }
+
+    public async Task<MasgedSettingsDto> CompleteSetupAsync(
+        FirstTimeSetupRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await db.MasgedSettings.FirstOrDefaultAsync(cancellationToken);
+        if (existing?.SetupCompleted == true)
+            throw new InvalidOperationException("تم إكمال الإعداد مسبقاً");
+
+        var domain = NormalizeDomain(request.Domain);
+        var expectedDomain = deploymentOptions.Value.Domain?.Trim();
+        if (!string.IsNullOrWhiteSpace(expectedDomain)
+            && !string.Equals(domain, NormalizeDomain(expectedDomain), StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"النطاق يجب أن يطابق نطاق النشر ({expectedDomain})");
+        }
+
+        var masgedName = request.MasgedName.Trim();
+        var primaryColor = request.PrimaryColor.Trim();
+        var uploadDirectory = uploadOptions.Value.Directory;
+
+        var setting = existing ?? new MasgedSetting();
+        setting.MasgedName = masgedName;
+        setting.PrimaryColor = primaryColor;
+        setting.Domain = domain;
+        setting.ParentAppStoreUrl = NormalizeOptionalUrl(request.ParentAppStoreUrl);
+        setting.ParentGooglePlayUrl = NormalizeOptionalUrl(request.ParentGooglePlayUrl);
+        setting.TeacherAppStoreUrl = NormalizeOptionalUrl(request.TeacherAppStoreUrl);
+        setting.TeacherGooglePlayUrl = NormalizeOptionalUrl(request.TeacherGooglePlayUrl);
+        setting.SetupCompleted = true;
+        setting.UpdatedAt = DateTime.Now;
+
+        if (request.LogoFile is { Length: > 0 })
+        {
+            var savedFileName = await TeacherImageStorage.SaveAsync(
+                request.LogoFile,
+                uploadDirectory,
+                cancellationToken);
+            if (!string.IsNullOrWhiteSpace(savedFileName))
+            {
+                TeacherImageStorage.DeleteIfExists(setting.LogoFileName, uploadDirectory);
+                setting.LogoFileName = savedFileName;
+            }
+        }
+
+        if (existing is null)
+            await repository.AddAsync(setting, cancellationToken);
+
+        await EnsureSuperAdminAsync(request, cancellationToken);
+
+        await repository.SaveChangesAsync(cancellationToken);
+        return MapToDto(setting);
+    }
+
+    private async Task EnsureSuperAdminAsync(
+        FirstTimeSetupRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var email = request.AdminEmail.Trim();
+        var emailTaken = await db.Teachers.AnyAsync(
+            t => t.Email == email,
+            cancellationToken);
+        if (emailTaken)
+            throw new InvalidOperationException("البريد مستخدم مسبقاً، اختر بريداً آخر لمدير النظام");
+
+        db.Teachers.Add(new Teacher
+        {
+            Name = request.AdminName.Trim(),
+            Email = email,
+            Password = request.AdminPassword,
+            UsersManage = true,
+            IsGirlTeacher = false,
+            IsViewOnly = false,
+        });
+    }
+
+    public async Task<MasgedSettingsDto> SaveAsync(
+        UpdateMasgedSettingsRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var masgedName = request.MasgedName.Trim();
+        var setting = await db.MasgedSettings.FirstOrDefaultAsync(cancellationToken);
+        var uploadDirectory = uploadOptions.Value.Directory;
+
+        if (setting is null)
+        {
+            setting = new MasgedSetting
+            {
+                MasgedName = masgedName,
+                UpdatedAt = DateTime.Now,
+                SetupCompleted = true,
+            };
+            ApplyOptionalBranding(setting, request);
+            ApplyAppStoreUrls(setting, request);
+            await ApplyLogoChangesAsync(setting, request, uploadDirectory, cancellationToken);
+            await repository.AddAsync(setting, cancellationToken);
+        }
+        else
+        {
+            setting.MasgedName = masgedName;
+            setting.UpdatedAt = DateTime.Now;
+            ApplyOptionalBranding(setting, request);
+            ApplyAppStoreUrls(setting, request);
+            await ApplyLogoChangesAsync(setting, request, uploadDirectory, cancellationToken);
+        }
+
+        await repository.SaveChangesAsync(cancellationToken);
+        return MapToDto(setting);
+    }
+
+    private static void ApplyOptionalBranding(MasgedSetting setting, UpdateMasgedSettingsRequestDto request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.PrimaryColor))
+            setting.PrimaryColor = request.PrimaryColor.Trim();
+        if (!string.IsNullOrWhiteSpace(request.Domain))
+            setting.Domain = NormalizeDomain(request.Domain);
+    }
+
+    private async Task ApplyLogoChangesAsync(
+        MasgedSetting setting,
+        UpdateMasgedSettingsRequestDto request,
+        string uploadDirectory,
+        CancellationToken cancellationToken)
+    {
+        if (request.RemoveLogo)
+        {
+            TeacherImageStorage.DeleteIfExists(setting.LogoFileName, uploadDirectory);
+            setting.LogoFileName = null;
+            return;
+        }
+
+        if (request.LogoFile is null || request.LogoFile.Length == 0)
+            return;
+
+        var savedFileName = await TeacherImageStorage.SaveAsync(
+            request.LogoFile,
+            uploadDirectory,
+            cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(savedFileName))
+            return;
+
+        TeacherImageStorage.DeleteIfExists(setting.LogoFileName, uploadDirectory);
+        setting.LogoFileName = savedFileName;
+    }
+
+    private static void ApplyAppStoreUrls(MasgedSetting setting, UpdateMasgedSettingsRequestDto request)
+    {
+        setting.ParentAppStoreUrl = NormalizeOptionalUrl(request.ParentAppStoreUrl);
+        setting.ParentGooglePlayUrl = NormalizeOptionalUrl(request.ParentGooglePlayUrl);
+        setting.TeacherAppStoreUrl = NormalizeOptionalUrl(request.TeacherAppStoreUrl);
+        setting.TeacherGooglePlayUrl = NormalizeOptionalUrl(request.TeacherGooglePlayUrl);
+    }
+
+    private static string NormalizeDomain(string value) =>
+        value.Trim().ToLowerInvariant()
+            .Replace("https://", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("http://", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .TrimEnd('/');
+
+    private static string? NormalizeOptionalUrl(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private MasgedSettingsDto MapToDto(MasgedSetting setting) =>
+        new()
+        {
+            Id = setting.Id,
+            MasgedName = setting.MasgedName,
+            LogoUrl = BuildLogoUrl(setting.LogoFileName),
+            ParentAppStoreUrl = setting.ParentAppStoreUrl,
+            ParentGooglePlayUrl = setting.ParentGooglePlayUrl,
+            TeacherAppStoreUrl = setting.TeacherAppStoreUrl,
+            TeacherGooglePlayUrl = setting.TeacherGooglePlayUrl,
+            PrimaryColor = setting.PrimaryColor,
+            Domain = setting.Domain,
+            SetupCompleted = setting.SetupCompleted,
+        };
+
+    private string? BuildLogoUrl(string? logoFileName)
+    {
+        if (string.IsNullOrWhiteSpace(logoFileName))
+            return null;
+
+        var baseUrl = GetRequestBaseUrl();
+        return TeacherImageStorage.BuildPublicImageUrl(logoFileName, baseUrl);
+    }
+
+    private string GetRequestBaseUrl()
+    {
+        var request = httpContextAccessor.HttpContext?.Request;
+        if (request is null)
+            return "http://localhost:5287";
+
+        return $"{request.Scheme}://{request.Host.Value}";
+    }
+}
