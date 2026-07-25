@@ -112,20 +112,27 @@ This publishes `…:v1.0.0` alongside `latest`. Then install customers with `--t
 On a fresh Ubuntu 22.04/24.04 server, with DNS already pointing at it:
 
 ```bash
-TOKEN=ghp_your_token_here
+# 1. Put the PAT on the server once (never commit this file)
+sudo mkdir -p /opt/masged
+echo 'ghp_your_new_token_here' | sudo tee /opt/masged/.ghcr-token >/dev/null
+sudo chmod 600 /opt/masged/.ghcr-token
 
+# 2. Download the installer (repo is private — token required)
+TOKEN=$(sudo cat /opt/masged/.ghcr-token)
 curl -fsSL -H "Authorization: Bearer $TOKEN" \
-  https://raw.githubusercontent.com/YOUR_ORG/YOUR_REPO/main/docker/scripts/install.sh \
+  https://raw.githubusercontent.com/OmarSalh-ani/MasgedPlatform/main/docker/scripts/install.sh \
   -o install.sh
 
+# 3. Install — token is read from /opt/masged/.ghcr-token automatically
 sudo bash install.sh \
   --domain customer.com \
   --email admin@customer.com \
-  --repo YOUR_ORG/YOUR_REPO \
-  --token "$TOKEN"
+  --repo OmarSalh-ani/MasgedPlatform
 ```
 
 Takes roughly 2–5 minutes, mostly image download. Then open `https://admin.customer.com/setup`.
+
+You can still pass `--token ghp_…` once; if `.ghcr-token` does not exist yet, the script saves it for future updates.
 
 ---
 

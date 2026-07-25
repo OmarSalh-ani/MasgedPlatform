@@ -3,11 +3,16 @@
 # No source code, no build. Installs Docker, opens the firewall, writes .env,
 # logs in to the registry, pulls images, and starts the stack.
 #
-#   sudo ./install.sh --domain customer.com --email admin@customer.com \
-#        --repo YourOrg/YourRepo --token ghp_xxxxxxxx
+#   # One-time: put the PAT on the server (never commit this file)
+#   sudo mkdir -p /opt/masged && sudo chmod 700 /opt/masged
+#   echo 'ghp_xxxxxxxx' | sudo tee /opt/masged/.ghcr-token >/dev/null
+#   sudo chmod 600 /opt/masged/.ghcr-token
 #
-# The token is a GitHub Personal Access Token with `read:packages`
-# (plus `repo` if the repository is private, so the compose file can be fetched).
+#   sudo ./install.sh --domain customer.com --email admin@customer.com \
+#        --repo YourOrg/YourRepo
+#
+# Token resolution order: --token → --token-file → $INSTALL_DIR/.ghcr-token →
+# GHCR_TOKEN / GITHUB_TOKEN env. Required scopes: read:packages (+ repo if private).
 
 set -euo pipefail
 
@@ -15,6 +20,7 @@ DOMAIN=""
 ACME_EMAIL=""
 REPO=""
 TOKEN=""
+TOKEN_FILE=""
 BRANCH="main"
 INSTALL_DIR="/opt/masged"
 IMAGE_REGISTRY=""
@@ -23,18 +29,25 @@ COMPOSE_URL=""
 SKIP_FIREWALL=0
 START_STACK=1
 FORCE_ENV=0
+SAVE_TOKEN=0
 
 usage() {
   cat <<'EOF'
-Usage: sudo ./install.sh --domain DOMAIN --email EMAIL --repo OWNER/REPO --token TOKEN [options]
+Usage: sudo ./install.sh --domain DOMAIN --email EMAIL --repo OWNER/REPO [options]
 
 Required:
   --domain DOMAIN     Apex domain (customer.com)
   --email EMAIL       Let's Encrypt contact email
   --repo OWNER/REPO   GitHub repo holding the compose file and packages
-  --token TOKEN       GitHub PAT (read:packages, plus repo if private)
+
+Token (one of these):
+  --token TOKEN           GitHub PAT (read:packages, plus repo if private)
+  --token-file PATH       Read the PAT from a file (chmod 600 recommended)
+  /opt/masged/.ghcr-token Default file (created/updated when --token is passed with --save-token)
+  $GHCR_TOKEN / $GITHUB_TOKEN   Environment variables
 
 Options:
+  --save-token        Write --token into $INSTALL_DIR/.ghcr-token for next runs
   --branch NAME       Branch to fetch compose from (default: main)
   --dir PATH          Install directory (default: /opt/masged)
   --tag TAG           Image tag to deploy (default: latest)
@@ -53,6 +66,49 @@ log()  { printf '\n==> %s\n' "$*"; }
 warn() { printf 'WARNING: %s\n' "$*" >&2; }
 die()  { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
+read_token_file() {
+  local path="$1"
+  [[ -f "${path}" ]] || return 1
+  # Strip CR and trailing newlines; reject empty/whitespace-only
+  TOKEN="$(tr -d '\r' < "${path}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | head -n1)"
+  [[ -n "${TOKEN}" ]] || return 1
+  return 0
+}
+
+resolve_token() {
+  if [[ -n "${TOKEN}" ]]; then
+    return 0
+  fi
+  if [[ -n "${TOKEN_FILE}" ]]; then
+    read_token_file "${TOKEN_FILE}" \
+      || die "Could not read token from --token-file ${TOKEN_FILE}"
+    return 0
+  fi
+  if read_token_file "${INSTALL_DIR}/.ghcr-token"; then
+    log "Using token from ${INSTALL_DIR}/.ghcr-token"
+    return 0
+  fi
+  if [[ -n "${GHCR_TOKEN:-}" ]]; then
+    TOKEN="${GHCR_TOKEN}"
+    return 0
+  fi
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    TOKEN="${GITHUB_TOKEN}"
+    return 0
+  fi
+  die "No GitHub token found. Pass --token, --token-file, set GHCR_TOKEN, or create ${INSTALL_DIR}/.ghcr-token (chmod 600)"
+}
+
+save_token_file() {
+  [[ "${SAVE_TOKEN}" -eq 1 ]] || return 0
+  [[ -n "${TOKEN}" ]] || return 0
+  mkdir -p "${INSTALL_DIR}"
+  umask 077
+  printf '%s\n' "${TOKEN}" > "${INSTALL_DIR}/.ghcr-token"
+  chmod 600 "${INSTALL_DIR}/.ghcr-token"
+  log "Saved token to ${INSTALL_DIR}/.ghcr-token (mode 600) — do not commit this file"
+}
+
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -60,6 +116,8 @@ parse_args() {
       --email) ACME_EMAIL="${2:-}"; shift 2 ;;
       --repo) REPO="${2:-}"; shift 2 ;;
       --token) TOKEN="${2:-}"; shift 2 ;;
+      --token-file) TOKEN_FILE="${2:-}"; shift 2 ;;
+      --save-token) SAVE_TOKEN=1; shift ;;
       --branch) BRANCH="${2:-}"; shift 2 ;;
       --dir) INSTALL_DIR="${2:-}"; shift 2 ;;
       --tag) IMAGE_TAG="${2:-}"; shift 2 ;;
@@ -76,7 +134,6 @@ parse_args() {
   [[ "${EUID}" -eq 0 ]] || die "Run as root: sudo $0 ..."
   [[ -n "${DOMAIN}" ]] || die "--domain is required"
   [[ -n "${ACME_EMAIL}" ]] || die "--email is required"
-  [[ -n "${TOKEN}" ]] || die "--token is required (GitHub PAT with read:packages)"
 
   DOMAIN="${DOMAIN#https://}"; DOMAIN="${DOMAIN#http://}"; DOMAIN="${DOMAIN%/}"
   [[ "${DOMAIN}" != *"/"* ]] || die "DOMAIN must be apex only (got: ${DOMAIN})"
@@ -91,6 +148,13 @@ parse_args() {
     local owner="${REPO%%/*}"
     IMAGE_REGISTRY="ghcr.io/${owner,,}"
   fi
+
+  resolve_token
+  # If they passed --token once, remember it on disk for updates/reinstalls
+  if [[ "${SAVE_TOKEN}" -eq 0 && -n "${TOKEN}" && ! -f "${INSTALL_DIR}/.ghcr-token" ]]; then
+    SAVE_TOKEN=1
+  fi
+  save_token_file
 }
 
 install_docker() {

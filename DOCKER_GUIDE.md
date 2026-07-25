@@ -64,18 +64,24 @@ dig +short api.customer.com
 ### Install
 
 ```bash
-TOKEN=ghp_your_token_here
+# Put the PAT on the server once (chmod 600). Never commit this file.
+sudo mkdir -p /opt/masged
+echo 'ghp_your_token_here' | sudo tee /opt/masged/.ghcr-token >/dev/null
+sudo chmod 600 /opt/masged/.ghcr-token
 
+TOKEN=$(sudo cat /opt/masged/.ghcr-token)
 curl -fsSL -H "Authorization: Bearer $TOKEN" \
-  https://raw.githubusercontent.com/YOUR_ORG/YOUR_REPO/main/docker/scripts/install.sh \
+  https://raw.githubusercontent.com/OmarSalh-ani/MasgedPlatform/main/docker/scripts/install.sh \
   -o install.sh
 
 sudo bash install.sh \
   --domain customer.com \
   --email admin@customer.com \
-  --repo YOUR_ORG/YOUR_REPO \
-  --token "$TOKEN"
+  --repo OmarSalh-ani/MasgedPlatform
 ```
+
+Token resolution: `--token` → `--token-file` → `/opt/masged/.ghcr-token` → `$GHCR_TOKEN` / `$GITHUB_TOKEN`.
+Passing `--token` the first time also writes `/opt/masged/.ghcr-token` for later updates.
 
 ### What the script does
 
@@ -91,6 +97,7 @@ sudo bash install.sh \
 | Flag | Meaning |
 |------|---------|
 | `--tag v1.0.0` | Deploy a pinned release instead of `latest` |
+| `--token` / `--token-file` | GitHub PAT (or use `/opt/masged/.ghcr-token`) |
 | `--dir /opt/masged` | Install directory |
 | `--branch main` | Branch to fetch the compose file from |
 | `--registry ghcr.io/org` | Override the image registry path |
@@ -551,7 +558,7 @@ Only use `-v` if you intentionally want a fresh empty SQL volume.
 
 - [ ] Images published to GHCR (once — see `docker/GHCR_SETUP.md`)  
 - [ ] DNS: `@`, `www`, `admin`, `api` → server IP  
-- [ ] `sudo bash install.sh --domain … --email … --repo … --token …` succeeded  
+- [ ] `sudo bash install.sh --domain … --email … --repo …` succeeded (token via `.ghcr-token`)  
 - [ ] `https://admin.DOMAIN/setup` completed (branding + super admin)  
 - [ ] Login works  
 - [ ] Integrations: Wasender + Agora (if needed)  
@@ -589,11 +596,13 @@ Only use `-v` if you intentionally want a fresh empty SQL volume.
 
 ```bash
 # On Ubuntu server (DNS A records already pointed here)
-TOKEN=ghp_your_token_here
+sudo mkdir -p /opt/masged
+echo 'ghp_your_token' | sudo tee /opt/masged/.ghcr-token >/dev/null && sudo chmod 600 /opt/masged/.ghcr-token
+TOKEN=$(sudo cat /opt/masged/.ghcr-token)
 curl -fsSL -H "Authorization: Bearer $TOKEN" \
-  https://raw.githubusercontent.com/YOUR_ORG/YOUR_REPO/main/docker/scripts/install.sh -o install.sh
+  https://raw.githubusercontent.com/OmarSalh-ani/MasgedPlatform/main/docker/scripts/install.sh -o install.sh
 sudo bash install.sh --domain customer.com --email admin@customer.com \
-  --repo YOUR_ORG/YOUR_REPO --token "$TOKEN"
+  --repo OmarSalh-ani/MasgedPlatform
 # Wait for healthy SQL + APIs
 # Browser: https://admin.customer.com/setup
 # Then: https://admin.customer.com/login

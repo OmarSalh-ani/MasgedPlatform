@@ -2,6 +2,8 @@
 .env
 **/.env
 !**/.env.example
+.ghcr-token
+**/.ghcr-token
 
 # Google service account private keys — supply at runtime, see DOCKER_GUIDE.md
 **/firebase-service-account.json
