@@ -136,6 +136,40 @@ You can still pass `--token ghp_…` once; if `.ghcr-token` does not exist yet, 
 
 ---
 
+## VMware / lab (no public DNS)
+
+Let's Encrypt will not work without a real domain pointing at a public IP. For an Ubuntu VM in VMware:
+
+1. Set the VM network to **Bridged** (easiest) so your Windows PC can reach it.
+2. Install with `--local` and a fake domain:
+
+```bash
+sudo bash install.sh \
+  --domain masged.local \
+  --email admin@masged.local \
+  --repo OmarSalh-ani/MasgedPlatform \
+  --local
+```
+
+3. On **Windows** (the machine with the browser), edit hosts as Administrator:
+
+`C:\Windows\System32\drivers\etc\hosts`
+
+```text
+192.168.x.x  masged.local
+192.168.x.x  www.masged.local
+192.168.x.x  admin.masged.local
+192.168.x.x  api.masged.local
+```
+
+Use the VM IP the installer prints (`hostname -I` inside Ubuntu).
+
+4. Open **http** (not https): `http://admin.masged.local/setup`
+
+`--local` drops `docker-compose.override.yml` so Traefik serves HTTP only and skips certificates.
+
+---
+
 ## Shipping updates to customers
 
 1. Push your changes to `main` (or tag a release) — GitHub rebuilds the images

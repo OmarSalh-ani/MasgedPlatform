@@ -30,14 +30,15 @@ SKIP_FIREWALL=0
 START_STACK=1
 FORCE_ENV=0
 SAVE_TOKEN=0
+LOCAL_MODE=0
 
 usage() {
   cat <<'EOF'
 Usage: sudo ./install.sh --domain DOMAIN --email EMAIL --repo OWNER/REPO [options]
 
 Required:
-  --domain DOMAIN     Apex domain (customer.com)
-  --email EMAIL       Let's Encrypt contact email
+  --domain DOMAIN     Apex domain (customer.com or masged.local for VMware)
+  --email EMAIL       Let's Encrypt contact email (use any address with --local)
   --repo OWNER/REPO   GitHub repo holding the compose file and packages
 
 Token (one of these):
@@ -47,6 +48,7 @@ Token (one of these):
   $GHCR_TOKEN / $GITHUB_TOKEN   Environment variables
 
 Options:
+  --local             VMware / lab mode: HTTP only, no Let's Encrypt, no public DNS
   --save-token        Write --token into $INSTALL_DIR/.ghcr-token for next runs
   --branch NAME       Branch to fetch compose from (default: main)
   --dir PATH          Install directory (default: /opt/masged)
@@ -58,7 +60,8 @@ Options:
   --force-env         Overwrite an existing .env (regenerates all secrets)
   -h, --help          Show this help
 
-DNS A records for @, www, admin and api must already point at this server.
+Production needs DNS A records for @, www, admin and api.
+With --local, edit the hosts file on your Windows PC instead (script prints the lines).
 EOF
 }
 
@@ -118,6 +121,7 @@ parse_args() {
       --token) TOKEN="${2:-}"; shift 2 ;;
       --token-file) TOKEN_FILE="${2:-}"; shift 2 ;;
       --save-token) SAVE_TOKEN=1; shift ;;
+      --local) LOCAL_MODE=1; shift ;;
       --branch) BRANCH="${2:-}"; shift 2 ;;
       --dir) INSTALL_DIR="${2:-}"; shift 2 ;;
       --tag) IMAGE_TAG="${2:-}"; shift 2 ;;
@@ -215,6 +219,22 @@ fetch_compose() {
     || die "Downloaded file is not a compose file (got an HTML error page?)"
   log "Saved ${INSTALL_DIR}/docker-compose.yml"
 
+  if [[ "${LOCAL_MODE}" -eq 1 ]]; then
+    local local_url="https://raw.githubusercontent.com/${REPO}/${BRANCH}/docker-compose.local.yml"
+    log "Downloading local / VMware overlay"
+    if ! curl -fsSL -H "Authorization: Bearer ${TOKEN}" \
+         -H "Accept: application/vnd.github.raw" \
+         "${local_url}" -o "${INSTALL_DIR}/docker-compose.override.yml"; then
+      die "Could not download ${local_url}"
+    fi
+    grep -q '^services:' "${INSTALL_DIR}/docker-compose.override.yml" \
+      || die "Downloaded local overlay is not a compose file"
+    log "Saved ${INSTALL_DIR}/docker-compose.override.yml (HTTP lab mode, no Let's Encrypt)"
+  else
+    # Avoid a stale lab overlay on a production install
+    rm -f "${INSTALL_DIR}/docker-compose.override.yml"
+  fi
+
   # Bind-mounted into both APIs; Firebase credentials are never baked into images
   mkdir -p "${INSTALL_DIR}/secrets"
   chmod 700 "${INSTALL_DIR}/secrets"
@@ -281,6 +301,14 @@ EOF
 }
 
 check_dns() {
+  if [[ "${LOCAL_MODE}" -eq 1 ]]; then
+    log "Local / VMware mode — skipping public DNS check"
+    local vm_ip
+    vm_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+    printf '  VM IP (use this in your Windows hosts file): %s\n' "${vm_ip:-unknown}"
+    return 0
+  fi
+
   log "Checking DNS for ${DOMAIN}"
   command -v dig >/dev/null 2>&1 || apt-get install -y dnsutils >/dev/null 2>&1 || true
 
@@ -320,6 +348,13 @@ start_stack() {
 }
 
 print_next_steps() {
+  local scheme="https"
+  local vm_ip=""
+  if [[ "${LOCAL_MODE}" -eq 1 ]]; then
+    scheme="http"
+    vm_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+  fi
+
   cat <<EOF
 
 ============================================================
@@ -327,14 +362,36 @@ Install finished.
 
 Directory: ${INSTALL_DIR}
 Images:    ${IMAGE_REGISTRY}/masged-*:${IMAGE_TAG}
-Setup:     https://admin.${DOMAIN}/setup
-Public:    https://${DOMAIN}
-Mobile API:https://api.${DOMAIN}
+Setup:     ${scheme}://admin.${DOMAIN}/setup
+Public:    ${scheme}://${DOMAIN}
+Mobile API:${scheme}://api.${DOMAIN}
+EOF
+
+  if [[ "${LOCAL_MODE}" -eq 1 ]]; then
+    cat <<EOF
+
+LOCAL / VMWARE — add these lines on your Windows PC
+(Notepad as Administrator → C:\\Windows\\System32\\drivers\\etc\\hosts):
+
+${vm_ip:-YOUR_VM_IP}  ${DOMAIN}
+${vm_ip:-YOUR_VM_IP}  www.${DOMAIN}
+${vm_ip:-YOUR_VM_IP}  admin.${DOMAIN}
+${vm_ip:-YOUR_VM_IP}  api.${DOMAIN}
+
+Then open ${scheme}://admin.${DOMAIN}/setup in the browser.
+VMware network: use Bridged (or NAT + port forward) so the host can reach the VM on port 80.
+EOF
+  else
+    cat <<EOF
 
 Next:
   1. Wait for SQL to become healthy: cd ${INSTALL_DIR} && docker compose ps
-  2. Open https://admin.${DOMAIN}/setup and create the super admin
+  2. Open ${scheme}://admin.${DOMAIN}/setup and create the super admin
   3. Configure Admin -> Integrations (Wasender / Agora) if needed
+EOF
+  fi
+
+  cat <<EOF
 
 PUSH NOTIFICATIONS ARE OFF.
   Firebase credentials are never shipped inside the images. To enable:

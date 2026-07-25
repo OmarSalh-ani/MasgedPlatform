@@ -97,6 +97,7 @@ Passing `--token` the first time also writes `/opt/masged/.ghcr-token` for later
 | Flag | Meaning |
 |------|---------|
 | `--tag v1.0.0` | Deploy a pinned release instead of `latest` |
+| `--local` | VMware/lab: HTTP only, no Let's Encrypt / public DNS |
 | `--token` / `--token-file` | GitHub PAT (or use `/opt/masged/.ghcr-token`) |
 | `--dir /opt/masged` | Install directory |
 | `--branch main` | Branch to fetch the compose file from |
