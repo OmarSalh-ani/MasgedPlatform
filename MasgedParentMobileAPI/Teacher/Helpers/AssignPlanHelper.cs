@@ -347,7 +347,7 @@ public static class AssignPlanHelper
         return rowsWithDates;
     }
 
-    private static DateTime GetNextWorkDay(DateTime current, IReadOnlyList<int> workDays)
+    public static DateTime GetNextWorkDay(DateTime current, IReadOnlyList<int> workDays)
     {
         if (workDays.Count == 0)
             return current.AddDays(1);

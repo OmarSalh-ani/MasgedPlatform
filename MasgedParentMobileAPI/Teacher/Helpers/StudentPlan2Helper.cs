@@ -147,7 +147,10 @@ public static class StudentPlan2Helper
                     SurahId = item.sura_no,
                     FromAyahNumber = item.min,
                     ToAyahNumber = item.max,
-                    PlanType = row.PlanType
+                    PlanType = row.PlanType,
+                    PlanDate = row.PlanDate,
+                    Status = row.Status,
+                    UseNextWorkDay = row.UseNextWorkDay
                 });
             }
         }

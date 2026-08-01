@@ -170,6 +170,12 @@ public class PlanRowInputDto
     public int FromAyahNumber { get; set; }
     public int ToAyahNumber { get; set; }
     public string PlanType { get; set; } = "حفظ";
+    /// <summary>Optional per-row schedule date. Ignored when <see cref="UseNextWorkDay"/> is true.</summary>
+    public DateTime? PlanDate { get; set; }
+    /// <summary>Optional status; defaults to منتظر التسميع when omitted.</summary>
+    public string? Status { get; set; }
+    /// <summary>When true, server sets PlanDate to the next circle work day after plan start / today.</summary>
+    public bool UseNextWorkDay { get; set; }
 }
 
 public class SaveReviseRowsRequestDto
@@ -196,6 +202,8 @@ public class LogPlanRowStatusRequestDto
     public string RowKey { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string? TabType { get; set; }
+    /// <summary>Optional confirmed end ayah when marking pass; if less than current to-ayah, remainder is scheduled next work day.</summary>
+    public int? ConfirmedToAyahNumber { get; set; }
 }
 
 public class LogPlanRowStatusResponseDto

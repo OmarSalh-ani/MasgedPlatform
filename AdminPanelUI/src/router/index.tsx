@@ -59,6 +59,7 @@ import { TestCertificatePage } from '@/pages/test-certificate/TestCertificatePag
 import { TestsReportPage } from '@/pages/tests/TestsReportPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { IntegrationsPage } from '@/pages/integrations/IntegrationsPage'
+import { OperationsGuidePage } from '@/pages/guide/OperationsGuidePage'
 import { SetupPage } from '@/pages/setup/SetupPage'
 import { WorkDaysPage } from '@/pages/work-days/WorkDaysPage'
 
@@ -148,6 +149,7 @@ export const router = createBrowserRouter([
           { path: 'tests', element: <TestsReportPage /> },
           { path: 'settings', element: <SettingsPage /> },
           { path: 'integrations', element: <IntegrationsPage /> },
+          { path: 'guide', element: <OperationsGuidePage /> },
           { path: 'work-days', element: <WorkDaysPage /> },
             ],
           },

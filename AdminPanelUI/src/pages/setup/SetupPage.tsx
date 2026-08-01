@@ -104,6 +104,7 @@ export function SetupPage() {
 
   useEffect(() => {
     if (!statusQuery.data?.domain) return
+    if (form.getValues('domain')) return
     form.setValue('domain', statusQuery.data.domain)
   }, [statusQuery.data?.domain, form])
 
@@ -210,10 +211,10 @@ export function SetupPage() {
                 <FormItem>
                   <FormLabel>النطاق (Domain)</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="customer.com" dir="ltr" readOnly />
+                    <Input {...field} placeholder="customer.com" dir="ltr" />
                   </FormControl>
                   <p className="text-xs text-slate-500">
-                    يتم ضبطه من ملف .env عند النشر (admin.domain و api.domain)
+                    النطاق الأساسي بدون https:// — تغييره لاحقاً يتطلب إعادة بناء الواجهات
                   </p>
                   <FormMessage />
                 </FormItem>

@@ -1,16 +1,12 @@
 # Secrets — never commit
 .env
 **/.env
-!**/.env.example
-.ghcr-token
-**/.ghcr-token
 
-# Google service account private keys — supply at runtime, see DOCKER_GUIDE.md
+# Google service account private keys — provide per deployment, never commit
 **/firebase-service-account.json
 
 # Real local credentials live here; committed appsettings.json holds placeholders
 **/appsettings.Development.json
-**/secrets/
 
 # Node
 **/node_modules/
@@ -23,7 +19,7 @@
 **/publish/
 AdminAPI/_buildcheck/
 
-# Runtime data — served from Docker volumes, not source control
+# Runtime data — lives on the deployment server, not in source control
 AdminAPI/Uploads/
 AdminAPI/FilesManager/
 AdminAPI/Logs/
@@ -44,3 +40,5 @@ ParentApp/
 *.user
 Thumbs.db
 .DS_Store
+
+_publish-staging/

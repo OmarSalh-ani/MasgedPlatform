@@ -107,6 +107,42 @@ function Sync-QcfFonts {
     Write-Host "QCF fonts synced: $count files"
 }
 
+# Server-owned files must never travel inside the package, so that extracting an
+# update over a live site cannot clobber its config, credentials or runtime data.
+# A fresh install copies appsettings.example.json to appsettings.json and edits it.
+function Protect-PublishOutput {
+    param(
+        [Parameter(Mandatory)]
+        [string]$PublishFolder
+    )
+
+    $appsettings = Join-Path $PublishFolder 'appsettings.json'
+    if (Test-Path $appsettings) {
+        $example = Join-Path $PublishFolder 'appsettings.example.json'
+        if (Test-Path $example) { Remove-Item $example -Force }
+        Rename-Item -Path $appsettings -NewName 'appsettings.example.json'
+        Write-Host 'Packaged config as template: appsettings.example.json'
+    }
+
+    $excluded = @(
+        'appsettings.Development.json',
+        'appsettings.Production.json',
+        'firebase-service-account.json',
+        '_buildcheck',
+        'Uploads',
+        'FilesManager',
+        'Logs'
+    )
+
+    foreach ($name in $excluded) {
+        $path = Join-Path $PublishFolder $name
+        if (Test-Path $path) {
+            Remove-Item $path -Recurse -Force
+            Write-Host "Excluded from package: $name"
+        }
+    }
+}
+
 function Publish-DotNetApi {
     param(
         [string]$ProjectName,
@@ -130,6 +166,8 @@ function Publish-DotNetApi {
     if ($ProjectName -eq 'AdminAPI') {
         Sync-QcfFonts -DestinationRoot $output
     }
+
+    Protect-PublishOutput -PublishFolder $output
 
     $zip = Join-Path $StagingDir "$ProjectName.zip"
     Zip-FolderContents -SourceFolder $output -ZipPath $zip

@@ -40,6 +40,7 @@ export const adminNavEntries: AdminNavEntry[] = [
   { type: 'link', to: '/statistics', label: 'الإحصائيات', icon: BarChart3 },
   { type: 'link', to: '/settings', label: 'الإعدادات', icon: Settings, visibility: adminOnly },
   { type: 'link', to: '/integrations', label: 'التكاملات', icon: Share2, visibility: adminOnly },
+  { type: 'link', to: '/guide', label: 'دليل التشغيل', icon: BookOpen, visibility: adminOnly },
   { type: 'link', to: '/work-days', label: 'أيام العمل', icon: CalendarDays, visibility: adminOnly },
 
   { type: 'section', label: 'الطلاب والخطط' },

@@ -12,6 +12,7 @@ export function SetupGuard() {
     queryKey: SETUP_STATUS_QUERY_KEY,
     queryFn: getSetupStatus,
     staleTime: 30_000,
+    retry: 1,
   })
 
   if (query.isLoading) {
@@ -22,9 +23,19 @@ export function SetupGuard() {
     )
   }
 
-  const setupCompleted = query.data?.setupCompleted === true
+  // Fail open: a transient API error must never trap an existing install on /setup.
+  // Only force the wizard when the API successfully reports setup is incomplete.
+  if (query.isError) {
+    if (isSetupRoute) {
+      return <Navigate to="/login" replace />
+    }
+    return <Outlet />
+  }
 
-  if (!setupCompleted && !isSetupRoute) {
+  const setupCompleted = query.data?.setupCompleted === true
+  const setupIncomplete = query.data?.setupCompleted === false
+
+  if (setupIncomplete && !isSetupRoute) {
     return <Navigate to="/setup" replace />
   }
 

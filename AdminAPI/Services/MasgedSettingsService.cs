@@ -44,14 +44,6 @@ public class MasgedSettingsService(
             throw new InvalidOperationException("تم إكمال الإعداد مسبقاً");
 
         var domain = NormalizeDomain(request.Domain);
-        var expectedDomain = deploymentOptions.Value.Domain?.Trim();
-        if (!string.IsNullOrWhiteSpace(expectedDomain)
-            && !string.Equals(domain, NormalizeDomain(expectedDomain), StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"النطاق يجب أن يطابق نطاق النشر ({expectedDomain})");
-        }
-
         var masgedName = request.MasgedName.Trim();
         var primaryColor = request.PrimaryColor.Trim();
         var uploadDirectory = uploadOptions.Value.Directory;

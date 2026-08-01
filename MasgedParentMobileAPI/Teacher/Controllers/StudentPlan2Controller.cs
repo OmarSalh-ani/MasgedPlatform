@@ -741,6 +741,14 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
             return this.ToActionResult(GlobalResponse.NotFound("السجل غير موجود"));
 
         var planId = memEntity?.PlanId ?? revEntity!.PlanId;
+        var fromAyah = memEntity?.FromAyahNumber ?? revEntity!.FromAyahNumber;
+        var originalToAyah = memEntity?.ToAyahNumber ?? revEntity!.ToAyahNumber;
+
+        if (PlanRowStatus.IsPass(status) && request.ConfirmedToAyahNumber is int confirmedCheck
+            && (confirmedCheck < fromAyah || confirmedCheck > originalToAyah))
+        {
+            return this.ToActionResult(GlobalResponse.BadRequest("إلى آية غير صالحة"));
+        }
 
         var loggedAt = KuwaitTime.Now;
         db.StudentPlanItemLogs.Add(new StudentPlanItemLog
@@ -759,11 +767,47 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
             memEntity.Status = status;
 
             if (PlanRowStatus.IsPass(status) && !PlanRowStatus.IsPass(previousStatus))
-                await EnsureReviseRowFromMemorizingAsync(memEntity, cancellationToken);
+            {
+                var confirmed = await ApplyPassWithOptionalRemainderAsync(
+                    studentId: studentId,
+                    teacherId: teacherId,
+                    circleId: circleId,
+                    planId: planId,
+                    isMemorizing: true,
+                    surahId: memEntity.SurahId,
+                    fromAyah: memEntity.FromAyahNumber,
+                    originalToAyah: memEntity.ToAyahNumber,
+                    rowPlanDate: memEntity.PlanDate,
+                    memorizationLevel: memEntity.MemorizationLevel,
+                    confirmedToAyah: request.ConfirmedToAyahNumber,
+                    cancellationToken: cancellationToken);
+
+                memEntity.ToAyahNumber = confirmed;
+            }
         }
         else
         {
-            revEntity!.Status = status;
+            var previousStatus = revEntity!.Status;
+            revEntity.Status = status;
+
+            if (PlanRowStatus.IsPass(status) && !PlanRowStatus.IsPass(previousStatus))
+            {
+                var confirmed = await ApplyPassWithOptionalRemainderAsync(
+                    studentId: studentId,
+                    teacherId: teacherId,
+                    circleId: circleId,
+                    planId: planId,
+                    isMemorizing: false,
+                    surahId: revEntity.SurahId,
+                    fromAyah: revEntity.FromAyahNumber,
+                    originalToAyah: revEntity.ToAyahNumber,
+                    rowPlanDate: revEntity.PlanDate,
+                    memorizationLevel: revEntity.MemorizationLevel,
+                    confirmedToAyah: request.ConfirmedToAyahNumber,
+                    cancellationToken: cancellationToken);
+
+                revEntity.ToAyahNumber = confirmed;
+            }
         }
 
         await db.SaveChangesAsync(cancellationToken);
@@ -904,9 +948,41 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
         CancellationToken cancellationToken)
     {
         var expanded = await StudentPlan2Helper.ExpandSurahRowsAsync(db, rows, cancellationToken);
+        IReadOnlyList<int> workDays = expanded.Any(r => r.UseNextWorkDay)
+            ? await GetWorkDayNumbersAsync(cancellationToken)
+            : Array.Empty<int>();
+
+        StudentPlan? planEntity = null;
+        int? teacherId = null;
+        int? circleId = null;
 
         foreach (var row in expanded)
         {
+            var rowDate = planStart;
+            var rowEnd = planEnd;
+
+            if (row.UseNextWorkDay)
+            {
+                rowDate = AssignPlanHelper.GetNextWorkDay(planStart, workDays);
+                rowEnd = rowDate;
+            }
+            else if (row.PlanDate.HasValue)
+            {
+                rowDate = row.PlanDate.Value.Date;
+                rowEnd = rowDate;
+            }
+
+            if (row.UseNextWorkDay || row.PlanDate.HasValue)
+            {
+                planEntity ??= await db.StudentPlans.FirstAsync(p => p.Id == planId, cancellationToken);
+                if (rowDate > planEntity.PlanToDate)
+                    planEntity.PlanToDate = rowDate;
+            }
+
+            var status = string.IsNullOrWhiteSpace(row.Status)
+                ? PlanRowStatus.Pending
+                : PlanRowStatus.Normalize(row.Status);
+
             if (row.PlanType == "مراجعة")
             {
                 db.StudentPlanRevises.Add(new StudentPlanRevise
@@ -917,10 +993,10 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                     SurahId = row.SurahId,
                     FromAyahNumber = row.FromAyahNumber,
                     ToAyahNumber = row.ToAyahNumber,
-                    PlanDate = planStart,
-                    PlanEndDate = planEnd,
+                    PlanDate = rowDate,
+                    PlanEndDate = rowEnd,
                     CreatedAt = now,
-                    Status = PlanRowStatus.Pending
+                    Status = status
                 });
             }
             else
@@ -933,11 +1009,32 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                     SurahId = row.SurahId,
                     FromAyahNumber = row.FromAyahNumber,
                     ToAyahNumber = row.ToAyahNumber,
-                    PlanDate = planStart,
-                    PlanEndDate = planEnd,
+                    PlanDate = rowDate,
+                    PlanEndDate = rowEnd,
                     CreatedAt = now,
-                    Status = PlanRowStatus.Pending
+                    Status = status
                 });
+            }
+
+            if (PlanRowStatus.IsPass(status))
+            {
+                if (teacherId is null || circleId is null)
+                {
+                    if (!TryGetTeacherContext(out var tid, out var cid))
+                        continue;
+                    teacherId = tid;
+                    circleId = cid;
+                }
+
+                await AddMemorizingArchiveCardAsync(
+                    studentId: studentId,
+                    teacherId: teacherId.Value,
+                    circleId: circleId.Value,
+                    isMemorizing: row.PlanType != "مراجعة",
+                    surahId: row.SurahId,
+                    fromAyah: row.FromAyahNumber,
+                    toAyah: row.ToAyahNumber,
+                    cancellationToken: cancellationToken);
             }
         }
     }
@@ -1000,34 +1097,109 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
         return 0;
     }
 
-    private async Task EnsureReviseRowFromMemorizingAsync(
-        StudentPlanMemorizing mem,
+    private async Task<int> ApplyPassWithOptionalRemainderAsync(
+        int studentId,
+        int teacherId,
+        int circleId,
+        int planId,
+        bool isMemorizing,
+        int surahId,
+        int fromAyah,
+        int originalToAyah,
+        DateTime rowPlanDate,
+        string memorizationLevel,
+        int? confirmedToAyah,
         CancellationToken cancellationToken)
     {
-        var exists = await db.StudentPlanRevises.AnyAsync(
-            x => x.StudentId == mem.StudentId
-                && x.PlanId == mem.PlanId
-                && x.SurahId == mem.SurahId
-                && x.FromAyahNumber == mem.FromAyahNumber
-                && x.ToAyahNumber == mem.ToAyahNumber,
-            cancellationToken);
+        var confirmed = confirmedToAyah ?? originalToAyah;
 
-        if (exists)
-            return;
-
-        var planEndDate = mem.PlanEndDate ?? mem.PlanDate;
-        db.StudentPlanRevises.Add(new StudentPlanRevise
+        if (confirmed < originalToAyah)
         {
-            StudentId = mem.StudentId,
-            PlanId = mem.PlanId,
-            MemorizationLevel = mem.MemorizationLevel,
-            SurahId = mem.SurahId,
-            FromAyahNumber = mem.FromAyahNumber,
-            ToAyahNumber = mem.ToAyahNumber,
-            PlanDate = mem.PlanDate,
-            PlanEndDate = planEndDate,
-            CreatedAt = KuwaitTime.Now,
-            Status = PlanRowStatus.Pending
+            var workDays = await GetWorkDayNumbersAsync(cancellationToken);
+            var nextDate = AssignPlanHelper.GetNextWorkDay(rowPlanDate, workDays);
+
+            var plan = await db.StudentPlans.FirstAsync(p => p.Id == planId, cancellationToken);
+            if (nextDate > plan.PlanToDate)
+                plan.PlanToDate = nextDate;
+
+            if (isMemorizing)
+            {
+                db.StudentPlanMemorizings.Add(new StudentPlanMemorizing
+                {
+                    StudentId = studentId,
+                    PlanId = planId,
+                    MemorizationLevel = memorizationLevel,
+                    SurahId = surahId,
+                    FromAyahNumber = confirmed + 1,
+                    ToAyahNumber = originalToAyah,
+                    PlanDate = nextDate,
+                    PlanEndDate = nextDate,
+                    CreatedAt = KuwaitTime.Now,
+                    Status = PlanRowStatus.Pending
+                });
+            }
+            else
+            {
+                db.StudentPlanRevises.Add(new StudentPlanRevise
+                {
+                    StudentId = studentId,
+                    PlanId = planId,
+                    MemorizationLevel = memorizationLevel,
+                    SurahId = surahId,
+                    FromAyahNumber = confirmed + 1,
+                    ToAyahNumber = originalToAyah,
+                    PlanDate = nextDate,
+                    PlanEndDate = nextDate,
+                    CreatedAt = KuwaitTime.Now,
+                    Status = PlanRowStatus.Pending
+                });
+            }
+        }
+
+        await AddMemorizingArchiveCardAsync(
+            studentId: studentId,
+            teacherId: teacherId,
+            circleId: circleId,
+            isMemorizing: isMemorizing,
+            surahId: surahId,
+            fromAyah: fromAyah,
+            toAyah: confirmed,
+            cancellationToken: cancellationToken);
+
+        return confirmed;
+    }
+
+    private async Task AddMemorizingArchiveCardAsync(
+        int studentId,
+        int teacherId,
+        int circleId,
+        bool isMemorizing,
+        int surahId,
+        int fromAyah,
+        int toAyah,
+        CancellationToken cancellationToken)
+    {
+        var now = KuwaitTime.Now;
+        var surahName = await db.QuranSurahs.AsNoTracking()
+            .Where(s => s.Id == surahId)
+            .Select(s => s.NameAr)
+            .FirstOrDefaultAsync(cancellationToken) ?? "";
+
+        db.StudentMemorizingCards.Add(new StudentMemorizingCard
+        {
+            CreatedAt = now,
+            CircleId = circleId,
+            DayName = now.ToString("dddd", CultureInfo.CurrentCulture),
+            IsDone = isMemorizing ? "لا" : "نعم",
+            TeacherId = teacherId,
+            StudentId = studentId,
+            TestFrom = fromAyah.ToString(CultureInfo.InvariantCulture),
+            TestTo = toAyah.ToString(CultureInfo.InvariantCulture),
+            SurahName = isMemorizing ? surahName : "",
+            TheType = isMemorizing ? "حفظ" : "مراجعة",
+            Notes = null,
+            ParentNotes = null,
+            IsSaveDone = isMemorizing ? "نعم" : "لا"
         });
     }
 
