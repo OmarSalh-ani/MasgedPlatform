@@ -29,7 +29,9 @@ public sealed class MemorizingArchiveService
         if (!string.IsNullOrWhiteSpace(surahSearch))
         {
             var term = surahSearch.Trim();
-            query = query.Where(x => x.TestFrom.Contains(term));
+            query = query.Where(x =>
+                (x.SurahName != null && x.SurahName.Contains(term)) ||
+                x.TestFrom.Contains(term));
         }
 
         return await PageParentAsync(
@@ -74,7 +76,9 @@ public sealed class MemorizingArchiveService
         if (!string.IsNullOrWhiteSpace(surahSearch))
         {
             var term = surahSearch.Trim();
-            query = query.Where(x => x.TestFrom.Contains(term));
+            query = query.Where(x =>
+                (x.SurahName != null && x.SurahName.Contains(term)) ||
+                x.TestFrom.Contains(term));
         }
 
         return await PageTeacherAsync(
@@ -103,6 +107,7 @@ public sealed class MemorizingArchiveService
                 TheType = x.TheType,
                 TestFrom = x.TestFrom,
                 TestTo = x.TestTo,
+                SurahName = x.SurahName ?? string.Empty,
                 IsDone = x.IsDone,
                 Notes = x.Notes,
                 CreatedAt = x.CreatedAt,
@@ -138,6 +143,7 @@ public sealed class MemorizingArchiveService
                 TheType = x.TheType,
                 TestFrom = x.TestFrom,
                 TestTo = x.TestTo,
+                SurahName = x.SurahName ?? string.Empty,
                 IsDone = x.IsDone,
                 Notes = x.Notes,
                 CreatedAt = x.CreatedAt,

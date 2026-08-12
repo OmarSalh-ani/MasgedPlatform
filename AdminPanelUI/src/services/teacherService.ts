@@ -34,6 +34,7 @@ function toFormData(payload: SaveTeacherPayload): FormData {
   formData.append('isGirlTeacher', String(payload.isGirlTeacher))
   formData.append('usersManage', String(payload.usersManage))
   formData.append('isViewOnly', String(payload.isViewOnly))
+  formData.append('isSupervisor', String(payload.isSupervisor))
   if (payload.removeImage) formData.append('removeImage', 'true')
   if (payload.imageFile) formData.append('image', payload.imageFile)
   if (payload.selectedMosqueIds.length > 0) {

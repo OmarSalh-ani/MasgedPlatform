@@ -1,4 +1,5 @@
 import { Pencil, Trash2, Users } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { DataTable } from '@/components/shared/DataTable'
 import type { DataTableColumn } from '@/components/shared/dataTableTypes'
@@ -11,26 +12,44 @@ interface CirclesTableProps {
   items: CircleListItem[]
   emptyMessage: string
   canModify: boolean
+  showSelection: boolean
+  selectedIds: number[]
+  onToggleSelect: (id: number, checked: boolean) => void
   onDelete: (id: number) => void
   onExport: () => void
   isExporting: boolean
+  toolbar?: ReactNode
 }
 
 function getColumns(
   canModify: boolean,
+  showSelection: boolean,
+  selectedIds: number[],
+  onToggleSelect: (id: number, checked: boolean) => void,
   onDelete: (id: number) => void,
 ): DataTableColumn<CircleListItem>[] {
-  return [
-    {
-      id: 'name',
-      header: 'اسم الحلقة',
-      accessor: 'name',
-    },
-    {
-      id: 'teacherName',
-      header: 'المعلم',
-      accessor: 'teacherName',
-    },
+  const columns: DataTableColumn<CircleListItem>[] = []
+
+  if (showSelection) {
+    columns.push({
+      id: 'select',
+      header: '',
+      className: 'w-10',
+      cell: (row) => (
+        <input
+          type="checkbox"
+          className="size-4 accent-[var(--color-primary)]"
+          checked={selectedIds.includes(row.id)}
+          onChange={(e) => onToggleSelect(row.id, e.target.checked)}
+          aria-label={`تحديد ${row.name}`}
+        />
+      ),
+    })
+  }
+
+  columns.push(
+    { id: 'name', header: 'اسم الحلقة', accessor: 'name' },
+    { id: 'teacherName', header: 'المعلم', accessor: 'teacherName' },
     {
       id: 'studentsCount',
       header: 'الطلاب',
@@ -88,28 +107,42 @@ function getColumns(
         </div>
       ),
     },
-  ]
+  )
+
+  return columns
 }
 
 export function CirclesTable({
   items,
   emptyMessage,
   canModify,
+  showSelection,
+  selectedIds,
+  onToggleSelect,
   onDelete,
   onExport,
   isExporting,
+  toolbar,
 }: CirclesTableProps) {
   return (
     <DataTable
       data={items}
-      columns={getColumns(canModify, onDelete)}
+      columns={getColumns(canModify, showSelection, selectedIds, onToggleSelect, onDelete)}
       getRowKey={(row) => String(row.id)}
       emptyMessage={emptyMessage}
       defaultViewMode="card"
       onExport={onExport}
       isExporting={isExporting}
+      toolbar={toolbar}
       renderCard={(row) => (
-        <CircleCard item={row} canModify={canModify} onDelete={onDelete} />
+        <CircleCard
+          item={row}
+          canModify={canModify}
+          showSelection={showSelection}
+          selected={selectedIds.includes(row.id)}
+          onSelectChange={(checked) => onToggleSelect(row.id, checked)}
+          onDelete={onDelete}
+        />
       )}
     />
   )

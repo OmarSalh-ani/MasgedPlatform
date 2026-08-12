@@ -217,23 +217,50 @@ public static class StudentHomeHelper
         if (ids.Count == 0)
             return [];
 
-        var memorizingLevels = await db.StudentPlanMemorizings
+        // Each level is a TOP(1) subquery so SQL Server reads one row per student per table.
+        // A GroupBy projection here is not translatable and makes EF stream every historical
+        // plan row of every student into memory.
+        var latest = await db.RegisterForms
             .AsNoTracking()
-            .Where(m => ids.Contains(m.StudentId) && m.MemorizationLevel != "")
-            .Select(m => new { m.StudentId, m.MemorizationLevel, m.PlanDate })
+            .Where(s => ids.Contains(s.Id))
+            .Select(s => new
+            {
+                StudentId = s.Id,
+                MemorizeLevel = db.StudentPlanMemorizings
+                    .Where(m => m.StudentId == s.Id && m.MemorizationLevel != "")
+                    .OrderByDescending(m => m.PlanDate)
+                    .Select(m => (string?)m.MemorizationLevel)
+                    .FirstOrDefault(),
+                MemorizeDate = db.StudentPlanMemorizings
+                    .Where(m => m.StudentId == s.Id && m.MemorizationLevel != "")
+                    .OrderByDescending(m => m.PlanDate)
+                    .Select(m => (DateTime?)m.PlanDate)
+                    .FirstOrDefault(),
+                ReviseLevel = db.StudentPlanRevises
+                    .Where(r => r.StudentId == s.Id && r.MemorizationLevel != "")
+                    .OrderByDescending(r => r.PlanDate)
+                    .Select(r => (string?)r.MemorizationLevel)
+                    .FirstOrDefault(),
+                ReviseDate = db.StudentPlanRevises
+                    .Where(r => r.StudentId == s.Id && r.MemorizationLevel != "")
+                    .OrderByDescending(r => r.PlanDate)
+                    .Select(r => (DateTime?)r.PlanDate)
+                    .FirstOrDefault(),
+            })
             .ToListAsync(cancellationToken);
 
-        var reviseLevels = await db.StudentPlanRevises
-            .AsNoTracking()
-            .Where(m => ids.Contains(m.StudentId) && m.MemorizationLevel != "")
-            .Select(m => new { m.StudentId, m.MemorizationLevel, m.PlanDate })
-            .ToListAsync(cancellationToken);
+        var result = new Dictionary<int, string>(latest.Count);
+        foreach (var row in latest)
+        {
+            // On equal dates the memorizing level wins, matching the previous ordering.
+            var preferRevise = row.ReviseDate.HasValue
+                && (!row.MemorizeDate.HasValue || row.ReviseDate > row.MemorizeDate);
 
-        return memorizingLevels
-            .Concat(reviseLevels)
-            .GroupBy(x => x.StudentId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.OrderByDescending(x => x.PlanDate).First().MemorizationLevel);
+            var level = preferRevise ? row.ReviseLevel : row.MemorizeLevel;
+            if (!string.IsNullOrWhiteSpace(level))
+                result[row.StudentId] = level;
+        }
+
+        return result;
     }
 }

@@ -1,6 +1,16 @@
 # Builds all Masged deployables, zips each output, and copies archives to ./publish
-# Usage: .\publish-all.ps1
-# Requires: dotnet SDK, Node.js/npm, Flutter (in PATH)
+# Usage:
+#   .\publish-all.ps1                  # server packages only (skips mobile + QCF fonts)
+#   .\publish-all.ps1 -IncludeMobile   # also build ParentApp web + Android AAB
+#   .\publish-all.ps1 -IncludeFonts    # also sync QCF fonts into AdminAPI
+#   .\publish-all.ps1 -IncludeMobile -IncludeFonts
+# Requires: dotnet SDK, Node.js/npm; Flutter only when -IncludeMobile
+
+[CmdletBinding()]
+param(
+    [switch]$IncludeMobile,
+    [switch]$IncludeFonts
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -152,7 +162,7 @@ function Publish-DotNetApi {
     Write-Step "Publishing $ProjectName (profile: $DotNetPublishProfile)"
     $csproj = Join-Path $Root $CsprojRelativePath
 
-    if ($ProjectName -eq 'AdminAPI') {
+    if ($IncludeFonts -and $ProjectName -eq 'AdminAPI') {
         $adminApiRoot = Join-Path $Root 'AdminAPI'
         Sync-QcfFonts -DestinationRoot $adminApiRoot
     }
@@ -163,8 +173,17 @@ function Publish-DotNetApi {
     $output = Get-DotNetPublishOutput -ProjectName $ProjectName
     Write-Host "Publish output: $output"
 
-    if ($ProjectName -eq 'AdminAPI') {
+    if ($IncludeFonts -and $ProjectName -eq 'AdminAPI') {
         Sync-QcfFonts -DestinationRoot $output
+    }
+    elseif (-not $IncludeFonts -and $ProjectName -eq 'AdminAPI') {
+        # Leftover local sync under AdminAPI\static\qcf-fonts is copied by
+        # dotnet publish (~128 MB). Strip it unless explicitly included.
+        $fontsDir = Join-Path $output 'static\qcf-fonts'
+        if (Test-Path $fontsDir) {
+            Remove-Item $fontsDir -Recurse -Force
+            Write-Host 'Excluded from package: static\qcf-fonts (pass -IncludeFonts to include)'
+        }
     }
 
     Protect-PublishOutput -PublishFolder $output
@@ -235,7 +254,9 @@ function Build-FlutterAndroid {
 # --- prerequisites ---
 Ensure-Command dotnet
 Ensure-Command npm
-Ensure-Command flutter
+if ($IncludeMobile) {
+    Ensure-Command flutter
+}
 
 if (Test-Path $PublishDir) {
     Remove-Item $PublishDir -Recurse -Force
@@ -249,13 +270,19 @@ New-Item -ItemType Directory -Path $StagingDir -Force | Out-Null
 $started = Get-Date
 Write-Host "Masged publish-all started at $($started.ToString('yyyy-MM-dd HH:mm:ss'))"
 Write-Host "Root: $Root"
+Write-Host "IncludeMobile: $IncludeMobile | IncludeFonts: $IncludeFonts"
 
 try {
     Publish-DotNetApi -ProjectName 'AdminAPI' -CsprojRelativePath 'AdminAPI\AdminAPI.csproj'
     Build-NpmUi -ProjectName 'AdminPanelUI' -FolderName 'AdminPanelUI'
     Publish-DotNetApi -ProjectName 'MasgedParentMobileAPI' -CsprojRelativePath 'MasgedParentMobileAPI\MasgedParentMobileAPI.csproj'
-    Build-FlutterWeb -ProjectName 'ParentApp' -FolderName 'ParentApp'
-    Build-FlutterAndroid
+    if ($IncludeMobile) {
+        Build-FlutterWeb -ProjectName 'ParentApp' -FolderName 'ParentApp'
+        Build-FlutterAndroid
+    }
+    else {
+        Write-Step 'Skipping ParentApp web + Android (pass -IncludeMobile to build)'
+    }
     Build-NpmUi -ProjectName 'PublicWebsiteUI' -FolderName 'PublicWebsiteUI'
 
     Write-Step 'Copying zip archives to publish folder'

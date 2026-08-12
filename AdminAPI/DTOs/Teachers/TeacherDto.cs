@@ -10,6 +10,7 @@ public class TeacherDto
     public bool UsersManage { get; set; }
     public bool IsGirlTeacher { get; set; }
     public bool IsViewOnly { get; set; }
+    public bool IsSupervisor { get; set; }
     public string? ImageUrl { get; set; }
     public List<int> SelectedMosqueIds { get; set; } = [];
     public List<TeacherMapLocationDto> ManualLocations { get; set; } = [];

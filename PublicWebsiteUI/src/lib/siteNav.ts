@@ -1,6 +1,6 @@
 export const SITE_ROUTES = {
   home: '/',
-  competitions: '/competitions',
+  tips: '/tips',
   mosques: '/mosques',
   news: '/news',
   activities: '/activities',
@@ -19,7 +19,7 @@ export interface SiteNavItem {
 
 export const SITE_NAV_ITEMS: SiteNavItem[] = [
   { to: SITE_ROUTES.home, label: 'الرئيسية', end: true },
-  { to: SITE_ROUTES.competitions, label: 'مسابقاتنا' },
+  { to: SITE_ROUTES.tips, label: 'نصائح وأرشادات' },
   { to: SITE_ROUTES.mosques, label: 'أماكننا' },
   { to: SITE_ROUTES.news, label: 'الأخبار' },
   { to: SITE_ROUTES.activities, label: 'الأنشطة', requiresActivities: true },
@@ -38,11 +38,11 @@ export interface SectionMeta {
 }
 
 export const SECTION_META: Record<string, SectionMeta> = {
-  competitions: {
-    badge: 'مسابقاتنا',
-    title: 'شارك واربح',
-    subtitle: 'شارك في مسابقاتنا المتنوعة والمثيرة واربح جوائز قيمة',
-    route: SITE_ROUTES.competitions,
+  tips: {
+    badge: 'نصائح وأرشادات',
+    title: 'نصائح وأرشادات',
+    subtitle: 'إرشادات مفيدة لأولياء الأمور والطلاب في رحلة حفظ القرآن',
+    route: SITE_ROUTES.tips,
   },
   mosques: {
     badge: 'مساجدنا',

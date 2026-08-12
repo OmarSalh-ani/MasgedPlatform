@@ -5,7 +5,7 @@ import { SITE_ROUTES } from '@/lib/siteNav'
 import { useHeroSlider } from '@/hooks/useHeroSlider'
 import {
   ActivitiesSection,
-  CompetitionsSection,
+  TipsSection,
   MosquesSection,
   NewsSection,
   PortalSection,
@@ -31,10 +31,10 @@ export function IndexPage() {
         showRegisterButton={registration?.registrationEnabled ?? false}
         showActivitiesButton={showActivities}
       />
-      <CompetitionsSection
-        items={content.competitions}
-        limit={HOME_PREVIEW_LIMIT.competitions}
-        viewAllHref={SITE_ROUTES.competitions}
+      <TipsSection
+        items={content.tips}
+        limit={HOME_PREVIEW_LIMIT.tips}
+        viewAllHref={SITE_ROUTES.tips}
         showCta
       />
       <MosquesSection

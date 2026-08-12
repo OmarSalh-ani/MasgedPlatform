@@ -15,8 +15,6 @@ export interface MasgedBrandingValue {
   masgedName: string
   logoUrl: string
   primaryColor: string
-  domain: string | null
-  setupCompleted: boolean
   isLoading: boolean
 }
 
@@ -24,8 +22,6 @@ const MasgedBrandingContext = createContext<MasgedBrandingValue>({
   masgedName: DEFAULT_MASGED_NAME,
   logoUrl: DEFAULT_MASGED_LOGO_URL,
   primaryColor: DEFAULT_PRIMARY_COLOR,
-  domain: null,
-  setupCompleted: true,
   isLoading: false,
 })
 
@@ -44,8 +40,6 @@ export function MasgedBrandingProvider({ children }: { children: ReactNode }) {
       masgedName,
       logoUrl,
       primaryColor,
-      domain: query.data?.domain ?? null,
-      setupCompleted: query.data?.setupCompleted === true,
       isLoading: query.isLoading,
     }
   }, [query.data, query.isLoading])

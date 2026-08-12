@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteCircle, exportCirclesExcel, getCircles } from '@/services/circlesService'
+import {
+  deleteCircle,
+  deleteCirclePlans,
+  exportCirclesExcel,
+  getCircles,
+} from '@/services/circlesService'
 
 export const CIRCLES_QUERY_KEY = ['circles'] as const
 
@@ -18,6 +23,13 @@ export function useCircles(teacherId?: number) {
     },
   })
 
+  const deletePlansMutation = useMutation({
+    mutationFn: (circleIds: number[]) => deleteCirclePlans(circleIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CIRCLES_QUERY_KEY })
+    },
+  })
+
   const exportMutation = useMutation({
     mutationFn: exportCirclesExcel,
     onSuccess: (blob) => {
@@ -30,5 +42,5 @@ export function useCircles(teacherId?: number) {
     },
   })
 
-  return { query, deleteMutation, exportMutation }
+  return { query, deleteMutation, deletePlansMutation, exportMutation }
 }

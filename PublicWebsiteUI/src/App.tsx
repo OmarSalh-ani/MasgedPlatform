@@ -1,7 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { ActivitiesPage } from '@/pages/ActivitiesPage/ActivitiesPage'
-import { CompetitionsPage } from '@/pages/CompetitionsPage/CompetitionsPage'
+import { TipsPage } from '@/pages/TipsPage/TipsPage'
 import { IndexPage } from '@/pages/IndexPage/IndexPage'
 import { MosquesPage } from '@/pages/MosquesPage/MosquesPage'
 import { NewsPage } from '@/pages/NewsPage/NewsPage'
@@ -16,7 +16,7 @@ export default function App() {
       <Route path="/parents-followup" element={<ParentsFollowupPage />} />
       <Route element={<PublicLayout />}>
         <Route path="/" element={<IndexPage />} />
-        <Route path="/competitions" element={<CompetitionsPage />} />
+        <Route path="/tips" element={<TipsPage />} />
         <Route path="/mosques" element={<MosquesPage />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/activities" element={<ActivitiesPage />} />

@@ -30,7 +30,9 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
                 "Validation failed",
                 validation.Errors.Select(e => e.ErrorMessage).ToList()),
             KeyNotFoundException => (HttpStatusCode.NotFound, ex.Message, new List<string>()),
+            ForbiddenException => (HttpStatusCode.Forbidden, ex.Message, new List<string>()),
             UnauthorizedAccessException => (HttpStatusCode.Forbidden, ex.Message, new List<string>()),
+            ArgumentException => (HttpStatusCode.BadRequest, ex.Message, new List<string> { ex.Message }),
             _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred", new List<string>())
         };
 

@@ -26,6 +26,8 @@
 
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.25" />
 
+    <PackageReference Include="QuestPDF" Version="2025.7.4" />
+
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
@@ -36,6 +38,9 @@
 
   <ItemGroup>
     <None Update="firebase-service-account.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\logo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

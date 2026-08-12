@@ -13,9 +13,13 @@ import {
   Info,
   Activity,
   Building2,
+  ClipboardCheck,
+  ClipboardPlus,
   GitBranch,
   Layers,
+  Lightbulb,
   List,
+  ListChecks,
   ListOrdered,
   LogOut,
   MessageSquare,
@@ -24,7 +28,6 @@ import {
   Settings,
   Share2,
   Star,
-  Trophy,
   Users,
   Venus,
   Wallet,
@@ -56,8 +59,36 @@ export const adminNavEntries: AdminNavEntry[] = [
 
   { type: 'section', label: 'التقارير' },
   { type: 'link', to: '/memorization-revision-report', label: 'تقرير الحفظ والمراجعة', icon: BookOpen },
+  {
+    type: 'link',
+    to: '/circle-memorization-revision-report',
+    label: 'تقرير الحفظ والمراجعة للحلقة',
+    icon: BookOpen,
+  },
   { type: 'link', to: '/special-students-report', label: 'تقرير الطلاب المميزين', icon: Star },
   { type: 'link', to: '/tests', label: 'تقرير الأختبارات', icon: List },
+
+  {
+    type: 'group',
+    id: 'circle-ratings',
+    label: 'التقييم',
+    icon: ClipboardCheck,
+    autoExpandPaths: ['circle-ratings'],
+    children: [
+      {
+        type: 'link',
+        to: '/circle-ratings/new',
+        label: 'تقييم جديد',
+        icon: ClipboardPlus,
+      },
+      {
+        type: 'link',
+        to: '/circle-ratings',
+        label: 'التقييمات',
+        icon: ListChecks,
+      },
+    ],
+  },
 
   { type: 'section', label: 'الحلقات والمعلمين' },
   { type: 'link', to: '/circles', label: 'إدارة حلقات القرآن الكريم', icon: BookOpen },
@@ -94,7 +125,7 @@ export const adminNavEntries: AdminNavEntry[] = [
     autoExpandPaths: [
       'hero-slides',
       'mosques',
-      'competitions',
+      'tips',
       'news',
       'activities',
       'about',
@@ -104,7 +135,7 @@ export const adminNavEntries: AdminNavEntry[] = [
     children: [
       { type: 'link', to: '/hero-slides', label: 'صور الهيرو', icon: Images },
       { type: 'link', to: '/mosques', label: 'مساجدنا', icon: Building2, visibility: adminOnly },
-      { type: 'link', to: '/competitions', label: 'مسابقاتنا', icon: Trophy, visibility: adminOnly },
+      { type: 'link', to: '/tips', label: 'نصائح وأرشادات', icon: Lightbulb, visibility: adminOnly },
       { type: 'link', to: '/news', label: 'آخر الأخبار', icon: Newspaper, visibility: adminOnly },
       { type: 'link', to: '/activities', label: 'الأنشطة', icon: Activity, visibility: adminOnly },
       { type: 'link', to: '/about', label: 'عن الجمعية', icon: Info, visibility: adminOnly },

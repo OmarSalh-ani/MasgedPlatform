@@ -37,11 +37,6 @@ const settingsSchema = z.object({
   primaryColor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, 'اللون يجب أن يكون بصيغة #RRGGBB'),
-  domain: z
-    .string()
-    .max(200, 'النطاق يجب ألا يتجاوز 200 حرف')
-    .optional()
-    .or(z.literal('')),
   parentAppStoreUrl: optionalUrl,
   parentGooglePlayUrl: optionalUrl,
   teacherAppStoreUrl: optionalUrl,
@@ -64,7 +59,6 @@ export function SettingsPage() {
     defaultValues: {
       masgedName: currentName,
       primaryColor: DEFAULT_PRIMARY_COLOR,
-      domain: '',
       parentAppStoreUrl: '',
       parentGooglePlayUrl: '',
       teacherAppStoreUrl: '',
@@ -77,7 +71,6 @@ export function SettingsPage() {
     form.reset({
       masgedName: query.data?.masgedName ?? currentName,
       primaryColor: query.data?.primaryColor?.trim() || DEFAULT_PRIMARY_COLOR,
-      domain: query.data?.domain ?? '',
       parentAppStoreUrl: query.data?.parentAppStoreUrl ?? '',
       parentGooglePlayUrl: query.data?.parentGooglePlayUrl ?? '',
       teacherAppStoreUrl: query.data?.teacherAppStoreUrl ?? '',
@@ -114,7 +107,6 @@ export function SettingsPage() {
       logoFile,
       removeLogo,
       primaryColor: values.primaryColor.trim(),
-      domain: values.domain?.trim() || null,
       parentAppStoreUrl: values.parentAppStoreUrl?.trim() || null,
       parentGooglePlayUrl: values.parentGooglePlayUrl?.trim() || null,
       teacherAppStoreUrl: values.teacherAppStoreUrl?.trim() || null,
@@ -192,24 +184,6 @@ export function SettingsPage() {
                       <Input {...field} className="font-mono" dir="ltr" maxLength={7} />
                     </div>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="domain"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>النطاق (Domain)</FormLabel>
-                  <FormControl>
-                    <Input dir="ltr" maxLength={200} placeholder="customer.com" {...field} />
-                  </FormControl>
-                  <p className="text-sm text-muted-foreground">
-                    تغيير النطاق يتطلب أيضاً تحديث DNS وشهادة SSL وملفات‎ .env‎ ثم إعادة بناء
-                    الواجهتين — راجع «دليل التشغيل»
-                  </p>
                   <FormMessage />
                 </FormItem>
               )}

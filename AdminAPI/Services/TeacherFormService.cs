@@ -71,6 +71,7 @@ public class TeacherFormService(
             UsersManage = request.UsersManage,
             IsGirlTeacher = request.IsGirlTeacher,
             IsViewOnly = request.IsViewOnly,
+            IsSupervisor = request.IsSupervisor,
             Image = await TeacherImageStorage.SaveAsync(
                 request.Image,
                 uploadOptions.Value.Directory,
@@ -107,6 +108,7 @@ public class TeacherFormService(
         teacher.UsersManage = request.UsersManage;
         teacher.IsGirlTeacher = request.IsGirlTeacher;
         teacher.IsViewOnly = request.IsViewOnly;
+        teacher.IsSupervisor = request.IsSupervisor;
 
         if (!string.IsNullOrWhiteSpace(request.Password))
             teacher.Password = request.Password.Trim();
@@ -167,6 +169,7 @@ public class TeacherFormService(
             UsersManage = teacher.UsersManage,
             IsGirlTeacher = teacher.IsGirlTeacher ?? false,
             IsViewOnly = teacher.IsViewOnly,
+            IsSupervisor = teacher.IsSupervisor,
             ImageUrl = TeacherImageStorage.BuildPublicImageUrl(
                 teacher.Image,
                 publicSiteOptions.Value.BaseUrl),

@@ -43,6 +43,13 @@ export async function deleteCircle(id: number): Promise<boolean> {
   return data.data
 }
 
+export async function deleteCirclePlans(circleIds: number[]): Promise<boolean> {
+  const { data } = await api.post<ApiResponse<boolean>>('/adminqurancircle/delete-plans', {
+    circleIds,
+  })
+  return data.data
+}
+
 export async function exportCirclesExcel(): Promise<Blob> {
   const { data } = await api.get<Blob>('/adminqurancircles/export/excel', {
     responseType: 'blob',

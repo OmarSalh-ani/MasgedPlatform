@@ -13,21 +13,30 @@ public class DatabaseBootstrapHostedService(
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        if (!deploymentOptions.Value.EnsureDatabase)
-            return;
-
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AdminDbContext>();
+        var ensureDatabase = deploymentOptions.Value.EnsureDatabase;
 
         for (var attempt = 1; attempt <= 30; attempt++)
         {
             try
             {
-                await db.Database.EnsureCreatedAsync(cancellationToken);
-                await EnsureWhiteLabelColumnsAsync(db, cancellationToken);
+                if (ensureDatabase)
+                    await db.Database.EnsureCreatedAsync(cancellationToken);
+
+                // Schema patches are always safe/idempotent — run even when EnsureDatabase is false
+                // (existing production DBs often skip EnsureCreated but still need new columns).
+                await EnsurePrimaryColorColumnAsync(db, cancellationToken);
                 await EnsureIntegrationSettingsTableAsync(db, cancellationToken);
-                await EnsureDefaultSettingsRowAsync(db, cancellationToken);
-                logger.LogInformation("Database bootstrap completed");
+                await EnsureCircleVisitRatingsTablesAsync(db, cancellationToken);
+                await EnsureTeacherIsSupervisorColumnAsync(db, cancellationToken);
+
+                if (ensureDatabase)
+                    await EnsureDefaultSettingsRowAsync(db, cancellationToken);
+
+                logger.LogInformation(
+                    "Database bootstrap completed (EnsureDatabase={EnsureDatabase})",
+                    ensureDatabase);
                 return;
             }
             catch (Exception ex) when (attempt < 30)
@@ -40,22 +49,12 @@ public class DatabaseBootstrapHostedService(
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    private static async Task EnsureWhiteLabelColumnsAsync(AdminDbContext db, CancellationToken cancellationToken)
+    private static async Task EnsurePrimaryColorColumnAsync(AdminDbContext db, CancellationToken cancellationToken)
     {
         await db.Database.ExecuteSqlRawAsync("""
-            IF COL_LENGTH('MasgedSettings', 'PrimaryColor') IS NULL
+            IF OBJECT_ID(N'dbo.MasgedSettings', N'U') IS NOT NULL
+               AND COL_LENGTH('MasgedSettings', 'PrimaryColor') IS NULL
                 ALTER TABLE MasgedSettings ADD PrimaryColor NVARCHAR(20) NULL;
-            """, cancellationToken);
-        await db.Database.ExecuteSqlRawAsync("""
-            IF COL_LENGTH('MasgedSettings', 'Domain') IS NULL
-                ALTER TABLE MasgedSettings ADD Domain NVARCHAR(200) NULL;
-            """, cancellationToken);
-        await db.Database.ExecuteSqlRawAsync("""
-            IF COL_LENGTH('MasgedSettings', 'SetupCompleted') IS NULL
-            BEGIN
-                ALTER TABLE MasgedSettings ADD SetupCompleted BIT NOT NULL CONSTRAINT DF_MasgedSettings_SetupCompleted DEFAULT (0);
-                UPDATE MasgedSettings SET SetupCompleted = 1 WHERE LEN(LTRIM(RTRIM(ISNULL(MasgedName, N'')))) > 0;
-            END
             """, cancellationToken);
     }
 
@@ -83,15 +82,69 @@ public class DatabaseBootstrapHostedService(
         if (await db.MasgedSettings.AnyAsync(cancellationToken))
             return;
 
-        var domain = deploymentOptions.Value.Domain?.Trim() ?? string.Empty;
         db.MasgedSettings.Add(new MasgedSetting
         {
             MasgedName = string.Empty,
             PrimaryColor = "#2563eb",
-            Domain = string.IsNullOrWhiteSpace(domain) ? null : domain,
-            SetupCompleted = false,
             UpdatedAt = DateTime.UtcNow,
         });
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task EnsureCircleVisitRatingsTablesAsync(
+        AdminDbContext db,
+        CancellationToken cancellationToken)
+    {
+        await db.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'dbo.CircleVisitRatings', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.CircleVisitRatings (
+                    Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                    TeacherId INT NOT NULL,
+                    QuranCircleId INT NOT NULL,
+                    VisitDate DATE NOT NULL,
+                    VisitTime TIME NOT NULL,
+                    VisitNumberInMonth INT NOT NULL,
+                    CreatedBy INT NOT NULL,
+                    CreatedAt DATETIME NOT NULL,
+                    CONSTRAINT FK_CircleVisitRatings_Teacher
+                        FOREIGN KEY (TeacherId) REFERENCES dbo.Teacher(Id),
+                    CONSTRAINT FK_CircleVisitRatings_QuranCircle
+                        FOREIGN KEY (QuranCircleId) REFERENCES dbo.QuranCircle(Id)
+                );
+                CREATE INDEX IX_CircleVisitRatings_TeacherId_VisitDate
+                    ON dbo.CircleVisitRatings (TeacherId, VisitDate);
+                CREATE INDEX IX_CircleVisitRatings_CreatedBy
+                    ON dbo.CircleVisitRatings (CreatedBy);
+            END
+            """, cancellationToken);
+
+        await db.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'dbo.CircleVisitRatingItems', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.CircleVisitRatingItems (
+                    Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                    CircleVisitRatingId INT NOT NULL,
+                    Sequence INT NOT NULL,
+                    Criterion NVARCHAR(200) NOT NULL,
+                    Rating NVARCHAR(50) NOT NULL,
+                    Notes NVARCHAR(1000) NULL,
+                    CONSTRAINT FK_CircleVisitRatingItems_CircleVisitRatings
+                        FOREIGN KEY (CircleVisitRatingId)
+                        REFERENCES dbo.CircleVisitRatings(Id) ON DELETE CASCADE
+                );
+            END
+            """, cancellationToken);
+    }
+
+    private static async Task EnsureTeacherIsSupervisorColumnAsync(
+        AdminDbContext db,
+        CancellationToken cancellationToken)
+    {
+        await db.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'dbo.Teacher', N'U') IS NOT NULL
+               AND COL_LENGTH('Teacher', 'IsSupervisor') IS NULL
+                ALTER TABLE Teacher ADD IsSupervisor BIT NOT NULL CONSTRAINT DF_Teacher_IsSupervisor DEFAULT 0;
+            """, cancellationToken);
     }
 }

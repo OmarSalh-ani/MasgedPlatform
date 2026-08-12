@@ -17,11 +17,11 @@ public partial class PublicIndexService
                 .ThenBy(x => x.Id)
                 .Select(x => new PublicHeroSlideItemDto { Id = x.Id, ImageUrl = x.ImageUrl! })
                 .ToListAsync(cancellationToken),
-            Competitions = await db.Competitions
+            Tips = await db.TipGuidances
                 .AsNoTracking()
                 .OrderBy(x => x.SortOrder)
                 .ThenByDescending(x => x.Id)
-                .Select(x => new PublicCompetitionItemDto
+                .Select(x => new PublicTipItemDto
                 {
                     Id = x.Id,
                     Title = x.Title,

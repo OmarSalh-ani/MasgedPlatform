@@ -23,47 +23,6 @@ public class AdminMasgedSettingsController(IMasgedSettingsService masgedSettings
         });
     }
 
-    [AllowAnonymous]
-    [HttpGet("setup-status")]
-    public async Task<ActionResult<ApiResponseDto<SetupStatusDto>>> GetSetupStatus(
-        CancellationToken cancellationToken)
-    {
-        var data = await masgedSettingsService.GetSetupStatusAsync(cancellationToken);
-        return Ok(new ApiResponseDto<SetupStatusDto>
-        {
-            Success = true,
-            Message = "OK",
-            Data = data,
-        });
-    }
-
-    [AllowAnonymous]
-    [HttpPost("setup")]
-    public async Task<ActionResult<ApiResponseDto<MasgedSettingsDto>>> CompleteSetup(
-        [FromForm] FirstTimeSetupRequestDto request,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var data = await masgedSettingsService.CompleteSetupAsync(request, cancellationToken);
-            return Ok(new ApiResponseDto<MasgedSettingsDto>
-            {
-                Success = true,
-                Message = "تم إكمال الإعداد",
-                Data = data,
-            });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new ApiResponseDto<MasgedSettingsDto>
-            {
-                Success = false,
-                Message = ex.Message,
-                Errors = [ex.Message],
-            });
-        }
-    }
-
     [Authorize]
     [HttpPut]
     public async Task<ActionResult<ApiResponseDto<MasgedSettingsDto>>> Save(

@@ -10,7 +10,5 @@ public class MasgedSetting
     public string? TeacherAppStoreUrl { get; set; }
     public string? TeacherGooglePlayUrl { get; set; }
     public string? PrimaryColor { get; set; }
-    public string? Domain { get; set; }
-    public bool SetupCompleted { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

@@ -7,13 +7,32 @@ import { formatCircleCreatedAt } from '@/types/circle'
 interface CircleCardProps {
   item: CircleListItem
   canModify: boolean
+  selected?: boolean
+  showSelection?: boolean
+  onSelectChange?: (checked: boolean) => void
   onDelete: (id: number) => void
 }
 
-export function CircleCard({ item, canModify, onDelete }: CircleCardProps) {
+export function CircleCard({
+  item,
+  canModify,
+  selected = false,
+  showSelection = false,
+  onSelectChange,
+  onDelete,
+}: CircleCardProps) {
   return (
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-lg">
       <div className="relative bg-gradient-to-br from-[var(--color-primary)] to-[#1a5f8a] px-5 py-6 text-center text-white">
+        {showSelection && (
+          <input
+            type="checkbox"
+            className="absolute top-4 left-4 size-4 accent-white"
+            checked={selected}
+            onChange={(e) => onSelectChange?.(e.target.checked)}
+            aria-label={`تحديد ${item.name}`}
+          />
+        )}
         <span className="absolute top-4 right-4 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">
           {item.forGirls ? 'نساء' : 'رجال'}
         </span>

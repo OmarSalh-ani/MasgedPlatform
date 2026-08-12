@@ -56,3 +56,13 @@ export function isAdmin(): boolean {
 export function isGirlTeacher(): boolean {
   return getAdminSession()?.isGirlTeacher === true
 }
+
+export function isSupervisor(): boolean {
+  return getAdminSession()?.isSupervisor === true
+}
+
+/** Supervisor with restricted access (admins always have full access). */
+export function isSupervisorOnly(): boolean {
+  const session = getAdminSession()
+  return Boolean(session?.isSupervisor && !session.isAdmin)
+}

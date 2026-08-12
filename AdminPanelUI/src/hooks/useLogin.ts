@@ -12,7 +12,7 @@ export function useLogin() {
     onSuccess: (response) => {
       if (!response.success || !response.data) return
 
-      const { token, id, username, isAdmin, isGirlTeacher, isViewOnly, redirectPath } =
+      const { token, id, username, isAdmin, isGirlTeacher, isViewOnly, isSupervisor, redirectPath } =
         response.data
 
       setAdminAuth(token, {
@@ -21,6 +21,7 @@ export function useLogin() {
         isAdmin,
         isGirlTeacher,
         isViewOnly,
+        isSupervisor: isSupervisor ?? false,
       })
 
       navigate(redirectPath || '/', { replace: true })

@@ -11,6 +11,7 @@ public class SaveTeacherRequestDto
     public bool IsGirlTeacher { get; set; }
     public bool UsersManage { get; set; }
     public bool IsViewOnly { get; set; }
+    public bool IsSupervisor { get; set; }
     public bool RemoveImage { get; set; }
     public IFormFile? Image { get; set; }
     public string? SelectedMosqueIds { get; set; }

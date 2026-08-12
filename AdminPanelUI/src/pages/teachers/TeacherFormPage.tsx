@@ -49,6 +49,7 @@ const defaultValues: TeacherFormValues = {
   isGirlTeacher: false,
   usersManage: false,
   isViewOnly: false,
+  isSupervisor: false,
   manualLocations: [],
   selectedMosqueIds: [],
 }
@@ -95,6 +96,7 @@ export function TeacherFormPage() {
       isGirlTeacher: teacher.isGirlTeacher,
       usersManage: teacher.usersManage,
       isViewOnly: teacher.isViewOnly,
+      isSupervisor: teacher.isSupervisor,
       manualLocations: normalizeManualLocations(teacher.manualLocations),
       selectedMosqueIds: teacher.selectedMosqueIds,
     })
@@ -115,6 +117,7 @@ export function TeacherFormPage() {
     isGirlTeacher: values.isGirlTeacher,
     usersManage: values.usersManage,
     isViewOnly: values.isViewOnly,
+    isSupervisor: values.isSupervisor,
     removeImage,
     imageFile: values.imageFile,
     selectedMosqueIds: values.selectedMosqueIds,
@@ -316,6 +319,7 @@ export function TeacherFormPage() {
                     ['isGirlTeacher', 'معلم نساء'],
                     ['usersManage', 'أدمن عام'],
                     ['isViewOnly', 'عرض فقط'],
+                    ['isSupervisor', 'مشرف'],
                   ] as const
                 ).map(([name, label]) => (
                   <FormField

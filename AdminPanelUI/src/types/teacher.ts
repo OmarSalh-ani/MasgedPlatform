@@ -35,6 +35,7 @@ export interface Teacher {
   usersManage: boolean
   isGirlTeacher: boolean
   isViewOnly: boolean
+  isSupervisor: boolean
   imageUrl: string | null
   selectedMosqueIds: number[]
   manualLocations: TeacherMapLocation[]
@@ -50,6 +51,7 @@ export interface SaveTeacherPayload {
   isGirlTeacher: boolean
   usersManage: boolean
   isViewOnly: boolean
+  isSupervisor: boolean
   removeImage?: boolean
   imageFile?: File
   selectedMosqueIds: number[]

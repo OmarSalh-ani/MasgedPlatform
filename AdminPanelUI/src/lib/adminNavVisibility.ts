@@ -34,7 +34,19 @@ function sectionHasVisibleItems(entries: AdminNavEntry[], sectionIndex: number):
   return false
 }
 
+function filterSupervisorNav(entries: AdminNavEntry[]): AdminNavEntry[] {
+  const ratingsGroup = entries.find(
+    (entry): entry is AdminNavGroup =>
+      entry.type === 'group' && entry.id === 'circle-ratings',
+  )
+  return ratingsGroup ? [ratingsGroup] : []
+}
+
 export function filterAdminNav(entries: AdminNavEntry[], session: AdminSession): AdminNavEntry[] {
+  if (session.isSupervisor && !session.isAdmin) {
+    return filterSupervisorNav(entries)
+  }
+
   const filtered: AdminNavEntry[] = []
 
   for (const entry of entries) {

@@ -18,6 +18,10 @@ public class CurrentUserContext(IHttpContextAccessor httpContextAccessor) : ICur
         bool.TryParse(httpContextAccessor.HttpContext?.User.FindFirstValue("IsAdmin"), out var isAdmin)
         && isAdmin;
 
+    public bool IsSupervisor =>
+        bool.TryParse(httpContextAccessor.HttpContext?.User.FindFirstValue("IsSupervisor"), out var isSupervisor)
+        && isSupervisor;
+
     public bool CanModify =>
         !bool.TryParse(httpContextAccessor.HttpContext?.User.FindFirstValue("IsViewOnly"), out var viewOnly)
         || !viewOnly;

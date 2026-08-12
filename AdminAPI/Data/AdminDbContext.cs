@@ -14,7 +14,7 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options) : DbContex
     public DbSet<MrkzStudent> MrkzStudents => Set<MrkzStudent>();
     public DbSet<ParentFollowup> ParentFollowups => Set<ParentFollowup>();
     public DbSet<ParentPanelLog> ParentPanelLogs => Set<ParentPanelLog>();
-    public DbSet<Competition> Competitions => Set<Competition>();
+    public DbSet<TipGuidance> TipGuidances => Set<TipGuidance>();
     public DbSet<ContactInfo> ContactInfos => Set<ContactInfo>();
     public DbSet<HeroSlide> HeroSlides => Set<HeroSlide>();
     public DbSet<NewsItem> NewsItems => Set<NewsItem>();
@@ -52,6 +52,8 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options) : DbContex
     public DbSet<ParentDeviceToken> ParentDeviceTokens => Set<ParentDeviceToken>();
     public DbSet<TeacherDeviceToken> TeacherDeviceTokens => Set<TeacherDeviceToken>();
     public DbSet<PushDeliveryLog> PushDeliveryLogs => Set<PushDeliveryLog>();
+    public DbSet<CircleVisitRating> CircleVisitRatings => Set<CircleVisitRating>();
+    public DbSet<CircleVisitRatingItem> CircleVisitRatingItems => Set<CircleVisitRatingItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -202,7 +204,7 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options) : DbContex
                 .HasConstraintName("FK_ParentPanelLog_RegisterForm");
         });
 
-        modelBuilder.Entity<Competition>(entity =>
+        modelBuilder.Entity<TipGuidance>(entity =>
         {
             entity.ToTable("Competition");
             entity.Property(e => e.CreatedAt)
@@ -422,8 +424,6 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options) : DbContex
             entity.Property(e => e.TeacherAppStoreUrl).HasMaxLength(500);
             entity.Property(e => e.TeacherGooglePlayUrl).HasMaxLength(500);
             entity.Property(e => e.PrimaryColor).HasMaxLength(20);
-            entity.Property(e => e.Domain).HasMaxLength(200);
-            entity.Property(e => e.SetupCompleted).HasDefaultValue(false);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
         });
 
@@ -651,6 +651,39 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options) : DbContex
             entity.HasIndex(e => e.CreatedAt);
             entity.HasIndex(e => new { e.Success, e.CreatedAt });
             entity.HasIndex(e => new { e.Platform, e.CreatedAt });
+        });
+
+        modelBuilder.Entity<CircleVisitRating>(entity =>
+        {
+            entity.ToTable("CircleVisitRatings");
+            entity.Property(e => e.VisitDate).HasColumnType("date");
+            entity.Property(e => e.VisitTime).HasColumnType("time");
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.HasOne(d => d.Teacher)
+                .WithMany()
+                .HasForeignKey(d => d.TeacherId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_CircleVisitRatings_Teacher");
+            entity.HasOne(d => d.QuranCircle)
+                .WithMany()
+                .HasForeignKey(d => d.QuranCircleId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_CircleVisitRatings_QuranCircle");
+            entity.HasIndex(e => new { e.TeacherId, e.VisitDate });
+            entity.HasIndex(e => e.CreatedBy);
+        });
+
+        modelBuilder.Entity<CircleVisitRatingItem>(entity =>
+        {
+            entity.ToTable("CircleVisitRatingItems");
+            entity.Property(e => e.Criterion).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Rating).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.HasOne(d => d.CircleVisitRating)
+                .WithMany(p => p.Items)
+                .HasForeignKey(d => d.CircleVisitRatingId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_CircleVisitRatingItems_CircleVisitRatings");
         });
     }
 }

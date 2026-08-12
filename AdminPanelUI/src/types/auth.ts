@@ -10,6 +10,7 @@ export interface LoginResponse {
   isAdmin: boolean
   isGirlTeacher: boolean
   isViewOnly: boolean
+  isSupervisor: boolean
   redirectPath: string
 }
 
@@ -19,6 +20,7 @@ export interface AdminSession {
   isAdmin: boolean
   isGirlTeacher: boolean
   isViewOnly: boolean
+  isSupervisor: boolean
 }
 
 export interface ChangePasswordRequest {

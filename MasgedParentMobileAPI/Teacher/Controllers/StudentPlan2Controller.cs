@@ -768,6 +768,8 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
 
             if (PlanRowStatus.IsPass(status) && !PlanRowStatus.IsPass(previousStatus))
             {
+                memEntity.MemorizeDate = loggedAt.Date;
+
                 var confirmed = await ApplyPassWithOptionalRemainderAsync(
                     studentId: studentId,
                     teacherId: teacherId,
@@ -792,6 +794,8 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
 
             if (PlanRowStatus.IsPass(status) && !PlanRowStatus.IsPass(previousStatus))
             {
+                revEntity.ReviseDate = loggedAt.Date;
+
                 var confirmed = await ApplyPassWithOptionalRemainderAsync(
                     studentId: studentId,
                     teacherId: teacherId,
@@ -983,6 +987,10 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                 ? PlanRowStatus.Pending
                 : PlanRowStatus.Normalize(row.Status);
 
+            // Rows saved as already passed carry no later status update, so the completion
+            // date has to be stamped here or the row keeps only its planned date.
+            var completedOn = PlanRowStatus.IsPass(status) ? now.Date : (DateTime?)null;
+
             if (row.PlanType == "مراجعة")
             {
                 db.StudentPlanRevises.Add(new StudentPlanRevise
@@ -996,7 +1004,8 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                     PlanDate = rowDate,
                     PlanEndDate = rowEnd,
                     CreatedAt = now,
-                    Status = status
+                    Status = status,
+                    ReviseDate = completedOn
                 });
             }
             else
@@ -1012,7 +1021,8 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                     PlanDate = rowDate,
                     PlanEndDate = rowEnd,
                     CreatedAt = now,
-                    Status = status
+                    Status = status,
+                    MemorizeDate = completedOn
                 });
             }
 
@@ -1116,14 +1126,32 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
         if (confirmed < originalToAyah)
         {
             var workDays = await GetWorkDayNumbersAsync(cancellationToken);
-            var nextDate = AssignPlanHelper.GetNextWorkDay(rowPlanDate, workDays);
+            // Keep remainder on the same plan day so the student finishes the surah
+            // before later surahs that were dumped on the same PlanDate.
+            var remainderDate = rowPlanDate.Date;
+            var bumpedDate = AssignPlanHelper.GetNextWorkDay(remainderDate, workDays);
 
             var plan = await db.StudentPlans.FirstAsync(p => p.Id == planId, cancellationToken);
-            if (nextDate > plan.PlanToDate)
-                plan.PlanToDate = nextDate;
+            if (bumpedDate > plan.PlanToDate)
+                plan.PlanToDate = bumpedDate;
 
             if (isMemorizing)
             {
+                // Push other same-day (or earlier-dated) pending rows to the next work day
+                // so "current" becomes the remainder of this surah, not التحريم/etc.
+                var competing = await db.StudentPlanMemorizings
+                    .Where(x => x.PlanId == planId
+                        && x.StudentId == studentId
+                        && x.SurahId != surahId
+                        && x.PlanDate <= remainderDate)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var row in competing.Where(x => !PlanRowStatus.IsPass(x.Status)))
+                {
+                    row.PlanDate = bumpedDate;
+                    row.PlanEndDate = bumpedDate;
+                }
+
                 db.StudentPlanMemorizings.Add(new StudentPlanMemorizing
                 {
                     StudentId = studentId,
@@ -1132,14 +1160,27 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                     SurahId = surahId,
                     FromAyahNumber = confirmed + 1,
                     ToAyahNumber = originalToAyah,
-                    PlanDate = nextDate,
-                    PlanEndDate = nextDate,
+                    PlanDate = remainderDate,
+                    PlanEndDate = remainderDate,
                     CreatedAt = KuwaitTime.Now,
                     Status = PlanRowStatus.Pending
                 });
             }
             else
             {
+                var competing = await db.StudentPlanRevises
+                    .Where(x => x.PlanId == planId
+                        && x.StudentId == studentId
+                        && x.SurahId != surahId
+                        && x.PlanDate <= remainderDate)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var row in competing.Where(x => !PlanRowStatus.IsPass(x.Status)))
+                {
+                    row.PlanDate = bumpedDate;
+                    row.PlanEndDate = bumpedDate;
+                }
+
                 db.StudentPlanRevises.Add(new StudentPlanRevise
                 {
                     StudentId = studentId,
@@ -1148,8 +1189,8 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                     SurahId = surahId,
                     FromAyahNumber = confirmed + 1,
                     ToAyahNumber = originalToAyah,
-                    PlanDate = nextDate,
-                    PlanEndDate = nextDate,
+                    PlanDate = remainderDate,
+                    PlanEndDate = remainderDate,
                     CreatedAt = KuwaitTime.Now,
                     Status = PlanRowStatus.Pending
                 });

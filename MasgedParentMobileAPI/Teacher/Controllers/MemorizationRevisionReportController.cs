@@ -21,6 +21,113 @@ public class MemorizationRevisionReportController(AppDbContext db) : ControllerB
 {
     private const string DefaultStatus = "قيد الأنتظار";
 
+    /// <summary>
+    /// Circle-level حفظ/مراجعة report for a date range (PDF or Excel).
+    /// </summary>
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportCircleReport(
+        [FromQuery] DateTime fromDate,
+        [FromQuery] DateTime toDate,
+        [FromQuery] string format = "pdf",
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetCircleId(out var circleId))
+            return this.ToActionResult(GlobalResponse.BadRequest("لم يتم العثور على حلقتك. يرجى تسجيل الدخول مرة أخرى."));
+
+        if (fromDate == default || toDate == default)
+            return this.ToActionResult(GlobalResponse.BadRequest("يرجى تحديد من تاريخ والى تاريخ."));
+
+        var from = fromDate.Date;
+        var to = toDate.Date;
+        if (to < from)
+            return this.ToActionResult(GlobalResponse.BadRequest("تاريخ النهاية يجب أن يكون بعد أو يساوي تاريخ البداية."));
+
+        if ((to - from).TotalDays > 366)
+            return this.ToActionResult(GlobalResponse.BadRequest("الحد الأقصى لفترة التقرير هو 365 يوم."));
+
+        var formatKey = (format ?? "pdf").Trim().ToLowerInvariant();
+        if (formatKey is not ("pdf" or "excel" or "xlsx"))
+            return this.ToActionResult(GlobalResponse.BadRequest("صيغة التقرير غير صالحة. استخدم pdf أو excel."));
+
+        var circleName = await db.QuranCircles
+            .AsNoTracking()
+            .Where(c => c.Id == circleId)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+
+        var teacherName = User.FindFirstValue("name") ?? "المعلم";
+
+        // Filter on the same date the report groups by, otherwise a row assessed outside the
+        // requested range would be pulled in by its planned date and shown under another day.
+        var memorizings = await db.StudentPlanMemorizings
+            .AsNoTracking()
+            .Include(x => x.QuranSurah)
+            .Include(x => x.RegisterForm)
+            .Where(x => x.RegisterForm.QuranCircleId == circleId
+                        && (x.MemorizeDate ?? x.PlanDate) >= from
+                        && (x.MemorizeDate ?? x.PlanDate) <= to
+                        && x.Status != null
+                        && PlanRowStatus.CircleReportStatuses.Contains(x.Status))
+            .ToListAsync(cancellationToken);
+
+        var revises = await db.StudentPlanRevises
+            .AsNoTracking()
+            .Include(x => x.QuranSurah)
+            .Include(x => x.RegisterForm)
+            .Where(x => x.RegisterForm.QuranCircleId == circleId
+                        && (x.ReviseDate ?? x.PlanDate) >= from
+                        && (x.ReviseDate ?? x.PlanDate) <= to
+                        && x.Status != null
+                        && PlanRowStatus.CircleReportStatuses.Contains(x.Status))
+            .ToListAsync(cancellationToken);
+
+        var archiveCards = await db.StudentMemorizingCards
+            .AsNoTracking()
+            .Include(x => x.RegisterForm)
+            .Where(x => x.CircleId == circleId
+                        && x.CreatedAt.Date >= from
+                        && x.CreatedAt.Date <= to
+                        && (
+                            (x.TheType == "حفظ" && x.IsSaveDone == "نعم")
+                            || (x.TheType == "مراجعة" && x.IsDone == "نعم")))
+            .ToListAsync(cancellationToken);
+
+        var rows = CircleMemorizationRevisionReportBuilder.BuildRows(memorizings, revises, archiveCards);
+        if (rows.Count == 0)
+            return this.ToActionResult(GlobalResponse.BadRequest("لا توجد بيانات حفظ أو مراجعة في الفترة المحددة"));
+
+        var meta = new CircleMemorizationRevisionReportMetaDto
+        {
+            CircleName = circleName,
+            TeacherName = teacherName,
+            PrintedAt = KuwaitTime.Now,
+            FromDate = from,
+            ToDate = to,
+            Rows = rows,
+        };
+
+        byte[] bytes;
+        string contentType;
+        string fileName;
+
+        if (formatKey is "excel" or "xlsx")
+        {
+            bytes = CircleMemorizationRevisionReportExcelExporter.Build(meta);
+            contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            fileName = "تقرير_الحفظ_والمراجعة_" +
+                       KuwaitTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".xlsx";
+        }
+        else
+        {
+            bytes = CircleMemorizationRevisionReportPdfExporter.Build(meta);
+            contentType = "application/pdf";
+            fileName = "تقرير_الحفظ_والمراجعة_" +
+                       KuwaitTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".pdf";
+        }
+
+        return File(bytes, contentType, fileName);
+    }
+
     [HttpGet("students")]
     public async Task<IActionResult> GetStudents(CancellationToken cancellationToken)
     {

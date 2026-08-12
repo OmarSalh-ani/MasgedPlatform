@@ -11,7 +11,7 @@ export const GOOGLE_PLAY_URL = import.meta.env.VITE_GOOGLE_PLAY_URL ?? '#'
 export const MOBILE_APP_BANNER_IMAGE = import.meta.env.VITE_MOBILE_APP_BANNER_IMAGE ?? ''
 
 export const HOME_PREVIEW_LIMIT = {
-  competitions: 3,
+  tips: 3,
   mosques: 6,
   news: 3,
   activities: 3,

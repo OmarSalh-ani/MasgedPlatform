@@ -1,7 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { clearAdminAuth, getAdminToken, isAuthenticated, updateAdminSession } from '@/lib/authStorage'
+import {
+  clearAdminAuth,
+  getAdminToken,
+  isAuthenticated,
+  isSupervisorOnly,
+  updateAdminSession,
+} from '@/lib/authStorage'
 import { getSession } from '@/services/authService'
+
+function isCircleRatingsPath(pathname: string): boolean {
+  return pathname === '/circle-ratings' || pathname.startsWith('/circle-ratings/')
+}
 
 export function ProtectedRoute() {
   const location = useLocation()
@@ -22,7 +32,10 @@ export function ProtectedRoute() {
         if (cancelled) return
         const token = getAdminToken()
         if (token) {
-          updateAdminSession(session)
+          updateAdminSession({
+            ...session,
+            isSupervisor: session.isSupervisor ?? false,
+          })
         }
         setStatus('authenticated')
       })
@@ -47,6 +60,10 @@ export function ProtectedRoute() {
 
   if (status === 'unauthenticated') {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
+
+  if (isSupervisorOnly() && !isCircleRatingsPath(location.pathname)) {
+    return <Navigate to="/circle-ratings" replace />
   }
 
   return <Outlet />

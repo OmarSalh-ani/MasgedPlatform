@@ -19,12 +19,10 @@ api.interceptors.response.use(
   (error) => {
     const requestUrl = error.config?.url ?? ''
     const isSessionCheck = requestUrl.includes('/adminauth/session')
-    const onSetup = window.location.pathname.startsWith('/setup')
 
     if (
       error.response?.status === 401 &&
       !window.location.pathname.startsWith('/login') &&
-      !onSetup &&
       !isSessionCheck
     ) {
       localStorage.removeItem('admin_token')

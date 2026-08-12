@@ -9,6 +9,7 @@ public class Teacher
     public bool UsersManage { get; set; }
     public bool? IsGirlTeacher { get; set; }
     public bool IsViewOnly { get; set; }
+    public bool IsSupervisor { get; set; }
     public string? Mobile { get; set; }
     public string? Image { get; set; }
     public decimal? BaseSalary { get; set; }

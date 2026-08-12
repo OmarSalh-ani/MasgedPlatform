@@ -9,8 +9,24 @@ namespace AdminAPI.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/adminqurancircle")]
-public class AdminQuranCircleController(IQuranCircleService quranCircleService) : ControllerBase
+public class AdminQuranCircleController(
+    IQuranCircleService quranCircleService,
+    IQuranCirclePlansClearService plansClearService) : ControllerBase
 {
+    [HttpPost("delete-plans")]
+    public async Task<ActionResult<ApiResponseDto<bool>>> DeletePlans(
+        [FromBody] DeleteCirclePlansRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        await plansClearService.DeletePlansAsync(request, cancellationToken);
+        return Ok(new ApiResponseDto<bool>
+        {
+            Success = true,
+            Message = "تم حذف الخطط والأرشيف بنجاح",
+            Data = true,
+        });
+    }
+
     [HttpGet("teachers")]
     public async Task<ActionResult<ApiResponseDto<List<TeacherOptionDto>>>> GetTeachers(
         CancellationToken cancellationToken)

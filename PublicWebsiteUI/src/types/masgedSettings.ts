@@ -9,8 +9,6 @@ export interface MasgedSettings {
   teacherAppStoreUrl: string | null
   teacherGooglePlayUrl: string | null
   primaryColor: string | null
-  domain: string | null
-  setupCompleted: boolean
 }
 
 export type MasgedSettingsApiResponse = ApiResponse<MasgedSettings | null>

@@ -54,8 +54,8 @@ builder.Services.AddScoped<IAboutService, AboutService>();
 builder.Services.AddScoped<IMasgedSettingsRepository, MasgedSettingsRepository>();
 builder.Services.AddScoped<IMasgedSettingsService, MasgedSettingsService>();
 builder.Services.AddScoped<IWorkDayService, WorkDayService>();
-builder.Services.AddScoped<ICompetitionRepository, CompetitionRepository>();
-builder.Services.AddScoped<ICompetitionService, CompetitionService>();
+builder.Services.AddScoped<ITipGuidanceRepository, TipGuidanceRepository>();
+builder.Services.AddScoped<ITipGuidanceService, TipGuidanceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAgeUpdateService, AgeUpdateService>();
 builder.Services.Configure<AgeUpdateOptions>(
@@ -97,6 +97,7 @@ builder.Services.AddScoped<INewsRepository, NewsRepository>();
 builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<IQuranCircleRepository, QuranCircleRepository>();
 builder.Services.AddScoped<IQuranCircleService, QuranCircleService>();
+builder.Services.AddScoped<IQuranCirclePlansClearService, QuranCirclePlansClearService>();
 builder.Services.AddScoped<IFilesManagerRepository, FilesManagerRepository>();
 builder.Services.AddScoped<IFilesManagerService, FilesManagerService>();
 builder.Services.AddScoped<IExpensiveRepository, ExpensiveRepository>();
@@ -126,6 +127,10 @@ builder.Services.AddScoped<IOthaiminCenterRepository, OthaiminCenterRepository>(
 builder.Services.AddScoped<IOthaiminCenterService, OthaiminCenterService>();
 builder.Services.AddScoped<IMemorizationRevisionReportRepository, MemorizationRevisionReportRepository>();
 builder.Services.AddScoped<IMemorizationRevisionReportService, MemorizationRevisionReportService>();
+builder.Services.AddScoped<ICircleMemorizationRevisionReportRepository, CircleMemorizationRevisionReportRepository>();
+builder.Services.AddScoped<ICircleMemorizationRevisionReportService, CircleMemorizationRevisionReportService>();
+builder.Services.AddScoped<ICircleVisitRatingRepository, CircleVisitRatingRepository>();
+builder.Services.AddScoped<ICircleVisitRatingService, CircleVisitRatingService>();
 builder.Services.AddScoped<ISpecialStudentsReportRepository, SpecialStudentsReportRepository>();
 builder.Services.AddScoped<ISpecialStudentsReportService, SpecialStudentsReportService>();
 builder.Services.AddScoped<IStudents2Repository, Students2Repository>();
@@ -169,14 +174,14 @@ builder.Services.Configure<FirebaseSettings>(
     builder.Configuration.GetSection(FirebaseSettings.SectionName));
 builder.Services.AddScoped<IAdminPushNotificationService, AdminPushNotificationService>();
 
-var competitionUploadDirectory = Path.Combine(
+var tipGuidanceUploadDirectory = Path.Combine(
     builder.Environment.ContentRootPath,
     "Uploads",
     "Competitions");
-Directory.CreateDirectory(competitionUploadDirectory);
-builder.Services.Configure<CompetitionUploadOptions>(options =>
+Directory.CreateDirectory(tipGuidanceUploadDirectory);
+builder.Services.Configure<TipGuidanceUploadOptions>(options =>
 {
-    options.Directory = competitionUploadDirectory;
+    options.Directory = tipGuidanceUploadDirectory;
 });
 
 var heroUploadDirectory = Path.Combine(
@@ -317,8 +322,8 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(competitionUploadDirectory),
-    RequestPath = CompetitionImageStorage.RequestPath
+    FileProvider = new PhysicalFileProvider(tipGuidanceUploadDirectory),
+    RequestPath = TipGuidanceImageStorage.RequestPath
 });
 app.UseStaticFiles(new StaticFileOptions
 {

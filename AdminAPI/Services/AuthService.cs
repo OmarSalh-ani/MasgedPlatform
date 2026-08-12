@@ -28,7 +28,11 @@ public class AuthService(
         }
 
         var token = jwtTokenFactory.CreateToken(teacher, username);
-        var redirectPath = teacher.UsersManage ? "/" : "/circles";
+        var redirectPath = teacher.UsersManage
+            ? "/"
+            : teacher.IsSupervisor
+                ? "/circle-ratings"
+                : "/circles";
 
         var data = new LoginResponseDto
         {
@@ -38,6 +42,7 @@ public class AuthService(
             IsAdmin = teacher.UsersManage,
             IsGirlTeacher = teacher.IsGirlTeacher ?? false,
             IsViewOnly = teacher.IsViewOnly,
+            IsSupervisor = teacher.IsSupervisor,
             RedirectPath = redirectPath,
         };
 

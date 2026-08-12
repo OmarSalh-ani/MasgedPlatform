@@ -26,28 +26,25 @@ public static class HomeStudentDeleteService
         var followups = await db.ParentFollowups.Where(x => x.StudentId == studentId).ToListAsync(cancellationToken);
         db.ParentFollowups.RemoveRange(followups);
 
-        try
-        {
-            await db.Database.ExecuteSqlRawAsync(
-                "DELETE FROM FormResponse WHERE StudentId = {0}",
-                [studentId],
-                cancellationToken);
-        }
-        catch
-        {
-            // Table may not exist in some environments.
-        }
+        var logs = await db.ParentPanelLogs.Where(x => x.StudentId == studentId).ToListAsync(cancellationToken);
+        db.ParentPanelLogs.RemoveRange(logs);
 
         try
         {
+            // Child values first (FK_ResponseValues_Response), then responses (FK_FormResponses_RegisterForm).
+            // Table names match dbo.FormResponses / dbo.FormResponseValues (not singular FormResponse).
             await db.Database.ExecuteSqlRawAsync(
-                "DELETE FROM ParentPanelLog WHERE StudentId = {0}",
+                """
+                DELETE FROM FormResponseValues
+                WHERE ResponseId IN (SELECT Id FROM FormResponses WHERE StudentId = {0});
+                DELETE FROM FormResponses WHERE StudentId = {0}
+                """,
                 [studentId],
                 cancellationToken);
         }
         catch
         {
-            // Table may not exist in some environments.
+            // Tables may not exist in some environments.
         }
 
         db.RegisterForms.Remove(student);

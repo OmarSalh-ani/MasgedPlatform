@@ -50,7 +50,6 @@ builder.Services.Configure<FirebaseSettings>(builder.Configuration.GetSection(Fi
 
 builder.Services.AddSingleton<AgoraTokenService>();
 builder.Services.AddSingleton<AgoraSecretsCache>();
-builder.Services.AddHostedService<AgoraSecretsRefreshHostedService>();
 builder.Services.AddScoped<PushNotificationService>();
 
 builder.Services.Configure<RequestLoggingSettings>(builder.Configuration.GetSection("RequestLogging"));
@@ -312,7 +311,9 @@ builder.Services.AddCors(options =>
     {
         policy.AllowAnyOrigin()
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            // Browsers hide these from JS unless exposed; file exports need them.
+            .WithExposedHeaders("Content-Disposition", "Content-Length");
     });
 });
 

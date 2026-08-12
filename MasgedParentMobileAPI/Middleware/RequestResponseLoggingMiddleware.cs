@@ -72,8 +72,8 @@ public sealed class RequestResponseLoggingMiddleware(
         var requestHeadersJson = SerializeHeaders(context.Request.Headers, opts.MaxBodyLength);
 
         var originalResponseBody = context.Response.Body;
-        await using var responseBuf = new MemoryStream();
-        context.Response.Body = responseBuf;
+        var capture = new ResponseCaptureStream(originalResponseBody, opts.MaxBodyLength);
+        context.Response.Body = capture;
 
         var stopwatch = Stopwatch.StartNew();
         try
@@ -83,13 +83,13 @@ public sealed class RequestResponseLoggingMiddleware(
         finally
         {
             stopwatch.Stop();
+            // Must be restored even when the pipeline throws, otherwise the error response
+            // is written into a stream nobody reads and the client sees an aborted
+            // connection with no status code instead of a 500.
+            context.Response.Body = originalResponseBody;
         }
 
-        responseBuf.Position = 0;
-        var rawResponseBody = await new StreamReader(responseBuf, Encoding.UTF8, leaveOpen: true).ReadToEndAsync(context.RequestAborted);
-        responseBuf.Position = 0;
-        await responseBuf.CopyToAsync(originalResponseBody, context.RequestAborted);
-        context.Response.Body = originalResponseBody;
+        var rawResponseBody = DescribeResponseBody(context.Response.ContentType, capture);
 
         try
         {
@@ -137,6 +137,27 @@ public sealed class RequestResponseLoggingMiddleware(
 
         db.ApiRequestLogs.Add(entry);
         await db.SaveChangesAsync(context.RequestAborted).ConfigureAwait(false);
+    }
+
+    private static string DescribeResponseBody(string? contentType, ResponseCaptureStream capture)
+    {
+        if (capture.TotalBytesWritten == 0)
+            return string.Empty;
+
+        if (!IsTextContentType(contentType))
+            return $"[{contentType ?? "unknown content type"}, {capture.TotalBytesWritten} bytes]";
+
+        return Encoding.UTF8.GetString(capture.CapturedBytes);
+    }
+
+    private static bool IsTextContentType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+            return false;
+
+        return contentType.Contains("json", StringComparison.OrdinalIgnoreCase)
+               || contentType.Contains("text", StringComparison.OrdinalIgnoreCase)
+               || contentType.Contains("xml", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? PrepareText(string? raw, int maxBodyLength)
@@ -187,5 +208,68 @@ public sealed class RequestResponseLoggingMiddleware(
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Writes straight through to the real response stream while keeping a capped copy for
+    /// logging, so multi-megabyte exports are never held in memory in full.
+    /// </summary>
+    private sealed class ResponseCaptureStream(Stream inner, int captureLimit) : Stream
+    {
+        private readonly MemoryStream _capture = new();
+
+        public long TotalBytesWritten { get; private set; }
+
+        public byte[] CapturedBytes => _capture.ToArray();
+
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            Capture(buffer.AsSpan(offset, count));
+            inner.Write(buffer, offset, count);
+        }
+
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            Capture(buffer.AsSpan(offset, count));
+            await inner.WriteAsync(buffer.AsMemory(offset, count), cancellationToken);
+        }
+
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            Capture(buffer.Span);
+            await inner.WriteAsync(buffer, cancellationToken);
+        }
+
+        public override void Flush() => inner.Flush();
+
+        public override Task FlushAsync(CancellationToken cancellationToken) => inner.FlushAsync(cancellationToken);
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        private void Capture(ReadOnlySpan<byte> data)
+        {
+            TotalBytesWritten += data.Length;
+
+            var remaining = captureLimit - (int)_capture.Length;
+            if (remaining <= 0)
+                return;
+
+            _capture.Write(data[..Math.Min(remaining, data.Length)]);
+        }
     }
 }

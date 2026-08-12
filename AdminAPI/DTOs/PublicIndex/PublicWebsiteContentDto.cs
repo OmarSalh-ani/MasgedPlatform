@@ -1,6 +1,6 @@
 namespace AdminAPI.DTOs.PublicIndex;
 
-public class PublicCompetitionItemDto
+public class PublicTipItemDto
 {
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -62,7 +62,7 @@ public class PublicAboutDto
 public class PublicWebsiteContentDto
 {
     public List<PublicHeroSlideItemDto> HeroSlides { get; set; } = [];
-    public List<PublicCompetitionItemDto> Competitions { get; set; } = [];
+    public List<PublicTipItemDto> Tips { get; set; } = [];
     public List<PublicMosqueItemDto> Mosques { get; set; } = [];
     public List<PublicNewsItemDto> News { get; set; } = [];
     public List<PublicActivityItemDto> Activities { get; set; } = [];

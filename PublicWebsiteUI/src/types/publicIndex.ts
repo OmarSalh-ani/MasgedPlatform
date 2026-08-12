@@ -5,7 +5,7 @@ export interface ApiResponse<T> {
   errors: string[]
 }
 
-export interface PublicCompetitionItem {
+export interface PublicTipItem {
   id: number
   title: string
   description?: string | null
@@ -59,7 +59,7 @@ export interface PublicAbout {
 
 export interface PublicWebsiteContent {
   heroSlides: PublicHeroSlideItem[]
-  competitions: PublicCompetitionItem[]
+  tips: PublicTipItem[]
   mosques: PublicMosqueItem[]
   news: PublicNewsItem[]
   activities: PublicActivityItem[]

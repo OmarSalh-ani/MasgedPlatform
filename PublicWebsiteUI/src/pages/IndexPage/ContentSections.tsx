@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { useState } from 'react'
 import type {
   PublicActivityItem,
-  PublicCompetitionItem,
+  PublicTipItem,
   PublicNewsItem,
 } from '@/types/publicIndex'
 import { openImageModal } from '@/components/ImageModal'
@@ -71,30 +71,30 @@ function EmptySection({ message }: { message: string }) {
   )
 }
 
-export function CompetitionsSection({
+export function TipsSection({
   items,
   limit,
   viewAllHref,
   showCta = false,
   showHeader = true,
-}: { items: PublicCompetitionItem[] } & SectionPreviewProps) {
-  const meta = SECTION_META.competitions
+}: { items: PublicTipItem[] } & SectionPreviewProps) {
+  const meta = SECTION_META.tips
   const displayItems = limit ? items.slice(0, limit) : items
   const hasMore = limit ? items.length > limit : false
 
   return (
-    <section id="competitions" className="section section--pattern">
+    <section id="tips" className="section section--pattern">
       <div className="container">
         {showHeader && (
           <SectionHeader
             badge={meta.badge}
             title={meta.title}
             subtitle={meta.subtitle}
-            action={viewAllHref ? { label: 'كل المسابقات', to: viewAllHref } : undefined}
+            action={viewAllHref ? { label: 'كل النصائح', to: viewAllHref } : undefined}
           />
         )}
         {displayItems.length === 0 ? (
-          <EmptySection message="لا توجد مسابقات حالياً" />
+          <EmptySection message="لا توجد نصائح حالياً" />
         ) : (
           <div className="cards-grid cards-grid--uniform">
             {displayItems.map((item) => (
@@ -112,7 +112,7 @@ export function CompetitionsSection({
             ))}
           </div>
         )}
-        {showCta && hasMore && viewAllHref && <SectionCta to={viewAllHref} label="عرض جميع المسابقات" />}
+        {showCta && hasMore && viewAllHref && <SectionCta to={viewAllHref} label="عرض جميع النصائح والإرشادات" />}
       </div>
     </section>
   )

@@ -68,6 +68,7 @@ public class AdminAuthController(IAuthService authService, ICurrentUserContext c
                 IsAdmin = currentUser.IsAdmin,
                 IsGirlTeacher = currentUser.IsGirlTeacher,
                 IsViewOnly = !currentUser.CanModify,
+                IsSupervisor = currentUser.IsSupervisor,
             },
         });
     }

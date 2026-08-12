@@ -1,13 +1,13 @@
 import { Navigate } from 'react-router-dom'
 import { useMasgedBranding } from '@/contexts/MasgedBrandingContext'
-import { isAuthenticated } from '@/lib/authStorage'
+import { isAuthenticated, isSupervisorOnly } from '@/lib/authStorage'
 import { LoginForm } from '@/pages/login/LoginForm'
 import '@/pages/login/login.css'
 
 export function LoginPage() {
   const { masgedName, logoUrl } = useMasgedBranding()
   if (isAuthenticated()) {
-    return <Navigate to="/" replace />
+    return <Navigate to={isSupervisorOnly() ? '/circle-ratings' : '/'} replace />
   }
 
   return (

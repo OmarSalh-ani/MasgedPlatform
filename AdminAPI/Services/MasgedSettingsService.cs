@@ -1,4 +1,3 @@
-using AdminAPI.Configuration;
 using AdminAPI.Data;
 using AdminAPI.DTOs.MasgedSettings;
 using AdminAPI.Models;
@@ -13,94 +12,12 @@ public class MasgedSettingsService(
     IMasgedSettingsRepository repository,
     AdminDbContext db,
     IHttpContextAccessor httpContextAccessor,
-    IOptions<TeacherUploadOptions> uploadOptions,
-    IOptions<DeploymentOptions> deploymentOptions) : IMasgedSettingsService
+    IOptions<TeacherUploadOptions> uploadOptions) : IMasgedSettingsService
 {
     public async Task<MasgedSettingsDto?> GetAsync(CancellationToken cancellationToken = default)
     {
         var setting = await repository.GetFirstAsync(cancellationToken);
         return setting is null ? null : MapToDto(setting);
-    }
-
-    public async Task<SetupStatusDto> GetSetupStatusAsync(CancellationToken cancellationToken = default)
-    {
-        var setting = await repository.GetFirstAsync(cancellationToken);
-        var envDomain = deploymentOptions.Value.Domain?.Trim();
-        return new SetupStatusDto
-        {
-            SetupCompleted = setting?.SetupCompleted == true,
-            Domain = string.IsNullOrWhiteSpace(setting?.Domain)
-                ? (string.IsNullOrWhiteSpace(envDomain) ? null : envDomain)
-                : setting.Domain,
-        };
-    }
-
-    public async Task<MasgedSettingsDto> CompleteSetupAsync(
-        FirstTimeSetupRequestDto request,
-        CancellationToken cancellationToken = default)
-    {
-        var existing = await db.MasgedSettings.FirstOrDefaultAsync(cancellationToken);
-        if (existing?.SetupCompleted == true)
-            throw new InvalidOperationException("تم إكمال الإعداد مسبقاً");
-
-        var domain = NormalizeDomain(request.Domain);
-        var masgedName = request.MasgedName.Trim();
-        var primaryColor = request.PrimaryColor.Trim();
-        var uploadDirectory = uploadOptions.Value.Directory;
-
-        var setting = existing ?? new MasgedSetting();
-        setting.MasgedName = masgedName;
-        setting.PrimaryColor = primaryColor;
-        setting.Domain = domain;
-        setting.ParentAppStoreUrl = NormalizeOptionalUrl(request.ParentAppStoreUrl);
-        setting.ParentGooglePlayUrl = NormalizeOptionalUrl(request.ParentGooglePlayUrl);
-        setting.TeacherAppStoreUrl = NormalizeOptionalUrl(request.TeacherAppStoreUrl);
-        setting.TeacherGooglePlayUrl = NormalizeOptionalUrl(request.TeacherGooglePlayUrl);
-        setting.SetupCompleted = true;
-        setting.UpdatedAt = DateTime.Now;
-
-        if (request.LogoFile is { Length: > 0 })
-        {
-            var savedFileName = await TeacherImageStorage.SaveAsync(
-                request.LogoFile,
-                uploadDirectory,
-                cancellationToken);
-            if (!string.IsNullOrWhiteSpace(savedFileName))
-            {
-                TeacherImageStorage.DeleteIfExists(setting.LogoFileName, uploadDirectory);
-                setting.LogoFileName = savedFileName;
-            }
-        }
-
-        if (existing is null)
-            await repository.AddAsync(setting, cancellationToken);
-
-        await EnsureSuperAdminAsync(request, cancellationToken);
-
-        await repository.SaveChangesAsync(cancellationToken);
-        return MapToDto(setting);
-    }
-
-    private async Task EnsureSuperAdminAsync(
-        FirstTimeSetupRequestDto request,
-        CancellationToken cancellationToken)
-    {
-        var email = request.AdminEmail.Trim();
-        var emailTaken = await db.Teachers.AnyAsync(
-            t => t.Email == email,
-            cancellationToken);
-        if (emailTaken)
-            throw new InvalidOperationException("البريد مستخدم مسبقاً، اختر بريداً آخر لمدير النظام");
-
-        db.Teachers.Add(new Teacher
-        {
-            Name = request.AdminName.Trim(),
-            Email = email,
-            Password = request.AdminPassword,
-            UsersManage = true,
-            IsGirlTeacher = false,
-            IsViewOnly = false,
-        });
     }
 
     public async Task<MasgedSettingsDto> SaveAsync(
@@ -117,7 +34,6 @@ public class MasgedSettingsService(
             {
                 MasgedName = masgedName,
                 UpdatedAt = DateTime.Now,
-                SetupCompleted = true,
             };
             ApplyOptionalBranding(setting, request);
             ApplyAppStoreUrls(setting, request);
@@ -141,8 +57,6 @@ public class MasgedSettingsService(
     {
         if (!string.IsNullOrWhiteSpace(request.PrimaryColor))
             setting.PrimaryColor = request.PrimaryColor.Trim();
-        if (!string.IsNullOrWhiteSpace(request.Domain))
-            setting.Domain = NormalizeDomain(request.Domain);
     }
 
     private async Task ApplyLogoChangesAsync(
@@ -181,12 +95,6 @@ public class MasgedSettingsService(
         setting.TeacherGooglePlayUrl = NormalizeOptionalUrl(request.TeacherGooglePlayUrl);
     }
 
-    private static string NormalizeDomain(string value) =>
-        value.Trim().ToLowerInvariant()
-            .Replace("https://", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .Replace("http://", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .TrimEnd('/');
-
     private static string? NormalizeOptionalUrl(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
@@ -201,8 +109,6 @@ public class MasgedSettingsService(
             TeacherAppStoreUrl = setting.TeacherAppStoreUrl,
             TeacherGooglePlayUrl = setting.TeacherGooglePlayUrl,
             PrimaryColor = setting.PrimaryColor,
-            Domain = setting.Domain,
-            SetupCompleted = setting.SetupCompleted,
         };
 
     private string? BuildLogoUrl(string? logoFileName)

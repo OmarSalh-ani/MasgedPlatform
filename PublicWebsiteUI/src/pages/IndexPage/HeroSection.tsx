@@ -69,7 +69,7 @@ export function HeroSection({
         </div>
       )}
 
-      <Link to={SITE_ROUTES.competitions} className="hero-scroll" aria-label="انتقل للمحتوى">
+      <Link to={SITE_ROUTES.tips} className="hero-scroll" aria-label="انتقل للمحتوى">
         <i className="fas fa-chevron-down" />
       </Link>
     </section>

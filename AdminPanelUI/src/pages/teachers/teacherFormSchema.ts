@@ -18,6 +18,7 @@ const teacherFormBaseSchema = z.object({
   isGirlTeacher: z.boolean(),
   usersManage: z.boolean(),
   isViewOnly: z.boolean(),
+  isSupervisor: z.boolean(),
   imageFile: z
     .instanceof(File)
     .optional()

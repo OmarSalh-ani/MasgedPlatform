@@ -121,6 +121,55 @@ public class QuranCircleRepository(AdminDbContext db) : IQuranCircleRepository
         return true;
     }
 
+    public async Task DeletePlansAndArchiveForCirclesAsync(
+        IReadOnlyList<int> circleIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (circleIds.Count == 0)
+            return;
+
+        var studentIds = await db.RegisterForms
+            .Where(r => r.QuranCircleId != null && circleIds.Contains(r.QuranCircleId.Value))
+            .Select(r => r.Id)
+            .ToListAsync(cancellationToken);
+
+        if (studentIds.Count > 0)
+        {
+            var planIds = await db.StudentPlans
+                .Where(p => studentIds.Contains(p.StudentId))
+                .Select(p => p.Id)
+                .ToListAsync(cancellationToken);
+
+            if (planIds.Count > 0)
+            {
+                var logs = await db.StudentPlanItemLogs
+                    .Where(l => planIds.Contains(l.PlanId))
+                    .ToListAsync(cancellationToken);
+                db.StudentPlanItemLogs.RemoveRange(logs);
+
+                var memorizings = await db.StudentPlanMemorizings
+                    .Where(m => planIds.Contains(m.PlanId))
+                    .ToListAsync(cancellationToken);
+                db.StudentPlanMemorizings.RemoveRange(memorizings);
+
+                var revises = await db.StudentPlanRevises
+                    .Where(r => planIds.Contains(r.PlanId))
+                    .ToListAsync(cancellationToken);
+                db.StudentPlanRevises.RemoveRange(revises);
+
+                var plans = await db.StudentPlans
+                    .Where(p => planIds.Contains(p.Id))
+                    .ToListAsync(cancellationToken);
+                db.StudentPlans.RemoveRange(plans);
+            }
+        }
+
+        var memorizingCards = await db.StudentMemorizingCards
+            .Where(c => circleIds.Contains(c.CircleId))
+            .ToListAsync(cancellationToken);
+        db.StudentMemorizingCards.RemoveRange(memorizingCards);
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
         db.SaveChangesAsync(cancellationToken);
 }

@@ -22,6 +22,7 @@ public class JwtTokenFactory(IConfiguration configuration)
             new("IsAdmin", teacher.UsersManage.ToString()),
             new("IsGirlTeacher", (teacher.IsGirlTeacher ?? false).ToString()),
             new("IsViewOnly", teacher.IsViewOnly.ToString()),
+            new("IsSupervisor", teacher.IsSupervisor.ToString()),
         };
 
         var credentials = new SigningCredentials(

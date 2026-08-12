@@ -19,6 +19,9 @@ public interface IQuranCircleRepository
     Task<QuranCircle?> GetByIdWithDaysAsync(int id, CancellationToken cancellationToken = default);
     Task<QuranCircle> AddAsync(QuranCircle entity, CancellationToken cancellationToken = default);
     Task<bool> DeleteWithRelatedAsync(int id, int? teacherId, CancellationToken cancellationToken = default);
+    Task DeletePlansAndArchiveForCirclesAsync(
+        IReadOnlyList<int> circleIds,
+        CancellationToken cancellationToken = default);
     Task ReplaceDaysAsync(int circleId, IEnumerable<int> dayNumbers, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

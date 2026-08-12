@@ -362,6 +362,8 @@ public static class StudentPlan2Helper
             .Include(x => x.QuranSurah)
             .Where(x => x.StudentId == student.Id && x.PlanId == plan.Id)
             .OrderBy(x => x.PlanDate)
+            .ThenBy(x => x.FromAyahNumber)
+            .ThenBy(x => x.Id)
             .ToListAsync(cancellationToken);
 
         var rev = await db.StudentPlanRevises
@@ -369,13 +371,20 @@ public static class StudentPlan2Helper
             .Include(x => x.QuranSurah)
             .Where(x => x.StudentId == student.Id && x.PlanId == plan.Id)
             .OrderBy(x => x.PlanDate)
+            .ThenBy(x => x.FromAyahNumber)
+            .ThenBy(x => x.Id)
             .ToListAsync(cancellationToken);
 
         var memRows = mem.Select(MapMemorizingRow).ToList();
         var revRows = rev.Select(MapReviseRow).ToList();
-        var combined = memRows.Concat(revRows).OrderBy(x => x.PlanDate).ToList();
+        var combined = memRows.Concat(revRows)
+            .OrderBy(x => x.PlanDate)
+            .ThenBy(x => x.FromAyahNumber)
+            .ThenBy(x => x.Key)
+            .ToList();
 
-        var currentMem = memRows.FirstOrDefault(x => PlanRowStatus.IsPending(x.Status));
+        var currentMem = memRows.FirstOrDefault(x =>
+            PlanRowStatus.IsPending(x.Status) || PlanRowStatus.IsFail(x.Status));
         var currentRev = revRows.FirstOrDefault(x =>
             PlanRowStatus.IsPending(x.Status) || PlanRowStatus.IsFail(x.Status));
 

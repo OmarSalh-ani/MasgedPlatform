@@ -7,27 +7,6 @@ export interface MasgedSettings {
   teacherAppStoreUrl: string | null
   teacherGooglePlayUrl: string | null
   primaryColor: string | null
-  domain: string | null
-  setupCompleted: boolean
-}
-
-export interface SetupStatus {
-  setupCompleted: boolean
-  domain: string | null
-}
-
-export interface FirstTimeSetupPayload {
-  masgedName: string
-  primaryColor: string
-  domain: string
-  logoFile?: File | null
-  parentAppStoreUrl?: string | null
-  parentGooglePlayUrl?: string | null
-  teacherAppStoreUrl?: string | null
-  teacherGooglePlayUrl?: string | null
-  adminName: string
-  adminEmail: string
-  adminPassword: string
 }
 
 export interface SaveMasgedSettingsPayload {
@@ -39,5 +18,4 @@ export interface SaveMasgedSettingsPayload {
   teacherAppStoreUrl?: string | null
   teacherGooglePlayUrl?: string | null
   primaryColor?: string | null
-  domain?: string | null
 }

@@ -21,6 +21,5 @@ public class UpdateMasgedSettingsRequestValidator : AbstractValidator<UpdateMasg
             .Matches("^#[0-9A-Fa-f]{6}$")
             .WithMessage("اللون يجب أن يكون بصيغة #RRGGBB")
             .When(x => !string.IsNullOrWhiteSpace(x.PrimaryColor));
-        RuleFor(x => x.Domain).MaximumLength(200).When(x => !string.IsNullOrWhiteSpace(x.Domain));
     }
 }

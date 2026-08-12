@@ -1,0 +1,21 @@
+Root cause analysis — student 1409 الملك → الجمعة skip
+======================================================
+Confirmed from live SQL results (plan 211):
+
+Facts
+- Pass remainder WORKED: memorizing_4013 الملك truncated 1–5 تم الحفظ;
+  row 4017 الملك 6–30 منتظر created at same LoggedAt.
+- Gap check: OK continuous (5 → 6).
+- Problem: 4017 was dated 2026-08-03 while التحريم/الطلاق/التغابن stayed on 2026-08-02
+  (all original expand rows shared PlanDate = plan start).
+- UI / CurrentMemorizing picks first pending by PlanDate → التحريم before الملك remainder.
+
+Code fix (StudentPlan2Controller.ApplyPassWithOptionalRemainderAsync)
+- Put remainder on the SAME PlanDate as the truncated row.
+- Bump other non-pass rows on that day (different SurahId) to the next work day.
+
+Also: StudentPlan2Helper orders by PlanDate, FromAyahNumber, Id; CurrentMemorizing
+includes fail status like revise.
+
+Data repair script: scripts/fix-student-1409-mulk-order.sql
+Diagnostic script: scripts/diagnose-student-1409-plan.sql

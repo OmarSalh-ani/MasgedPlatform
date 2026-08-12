@@ -22,6 +22,19 @@ public static class PlanRowStatus
         Pass, "تم", "قيد الانتظار في التثبيت"
     ];
 
+    /// <summary>Statuses included in circle حفظ/مراجعة export reports.</summary>
+    public static readonly string[] CircleReportStatuses =
+    [
+        Pass, "تم المراجعة"
+    ];
+
+    public static bool IsCircleReportStatus(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return false;
+        return CircleReportStatuses.Contains(status.Trim());
+    }
+
     public static string Normalize(string? status)
     {
         if (string.IsNullOrWhiteSpace(status))
