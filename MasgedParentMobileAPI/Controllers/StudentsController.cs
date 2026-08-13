@@ -172,6 +172,7 @@ public class StudentsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? surahSearch = null,
+        [FromQuery] string? typeFilter = null,
         CancellationToken cancellationToken = default)
     {
         var fatherPhone = GetFatherPhone();
@@ -184,6 +185,7 @@ public class StudentsController : ControllerBase
             _db,
             id,
             surahSearch,
+            typeFilter,
             page,
             pageSize,
             cancellationToken);

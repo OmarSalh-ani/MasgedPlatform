@@ -227,22 +227,30 @@ public static class StudentHomeHelper
             {
                 StudentId = s.Id,
                 MemorizeLevel = db.StudentPlanMemorizings
-                    .Where(m => m.StudentId == s.Id && m.MemorizationLevel != "")
+                    .Where(m => m.StudentId == s.Id
+                        && m.MemorizationLevel != ""
+                        && !m.MemorizationLevel.StartsWith(ManualPlanRowHelper.Prefix))
                     .OrderByDescending(m => m.PlanDate)
                     .Select(m => (string?)m.MemorizationLevel)
                     .FirstOrDefault(),
                 MemorizeDate = db.StudentPlanMemorizings
-                    .Where(m => m.StudentId == s.Id && m.MemorizationLevel != "")
+                    .Where(m => m.StudentId == s.Id
+                        && m.MemorizationLevel != ""
+                        && !m.MemorizationLevel.StartsWith(ManualPlanRowHelper.Prefix))
                     .OrderByDescending(m => m.PlanDate)
                     .Select(m => (DateTime?)m.PlanDate)
                     .FirstOrDefault(),
                 ReviseLevel = db.StudentPlanRevises
-                    .Where(r => r.StudentId == s.Id && r.MemorizationLevel != "")
+                    .Where(r => r.StudentId == s.Id
+                        && r.MemorizationLevel != ""
+                        && !r.MemorizationLevel.StartsWith(ManualPlanRowHelper.Prefix))
                     .OrderByDescending(r => r.PlanDate)
                     .Select(r => (string?)r.MemorizationLevel)
                     .FirstOrDefault(),
                 ReviseDate = db.StudentPlanRevises
-                    .Where(r => r.StudentId == s.Id && r.MemorizationLevel != "")
+                    .Where(r => r.StudentId == s.Id
+                        && r.MemorizationLevel != ""
+                        && !r.MemorizationLevel.StartsWith(ManualPlanRowHelper.Prefix))
                     .OrderByDescending(r => r.PlanDate)
                     .Select(r => (DateTime?)r.PlanDate)
                     .FirstOrDefault(),

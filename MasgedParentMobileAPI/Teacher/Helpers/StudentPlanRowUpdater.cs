@@ -11,8 +11,13 @@ public static class StudentPlanRowUpdater
 
     public static string? ValidateRequest(UpdatePlanRowRequestDto request)
     {
-        if (request.SurahId <= 0)
+        var isManual = !string.IsNullOrWhiteSpace(request.SurahName);
+
+        if (!isManual && request.SurahId <= 0)
             return "يرجى اختيار السورة";
+
+        if (isManual && string.IsNullOrWhiteSpace(request.SurahName))
+            return "يرجى إدخال اسم السورة";
 
         if (request.FromAyahNumber <= 0 || request.ToAyahNumber <= 0)
             return "يرجى إدخال نطاق آيات صحيح";
@@ -84,7 +89,10 @@ public static class StudentPlanRowUpdater
         DateTime planStart,
         DateTime planEnd)
     {
-        ent.SurahId = request.SurahId;
+        ent.MemorizationLevel = ManualPlanRowHelper.ResolveLevel(
+            request.SurahName,
+            ent.MemorizationLevel);
+        ent.SurahId = ResolveSurahId(request);
         ent.FromAyahNumber = request.FromAyahNumber;
         ent.ToAyahNumber = request.ToAyahNumber;
         ent.PlanDate = planStart;
@@ -97,12 +105,20 @@ public static class StudentPlanRowUpdater
         DateTime planStart,
         DateTime planEnd)
     {
-        ent.SurahId = request.SurahId;
+        ent.MemorizationLevel = ManualPlanRowHelper.ResolveLevel(
+            request.SurahName,
+            ent.MemorizationLevel);
+        ent.SurahId = ResolveSurahId(request);
         ent.FromAyahNumber = request.FromAyahNumber;
         ent.ToAyahNumber = request.ToAyahNumber;
         ent.PlanDate = planStart;
         ent.PlanEndDate = planEnd;
     }
+
+    private static int ResolveSurahId(UpdatePlanRowRequestDto request) =>
+        string.IsNullOrWhiteSpace(request.SurahName)
+            ? request.SurahId
+            : ManualPlanRowHelper.PlaceholderSurahId;
 
     private static void ConvertMemorizingToRevise(
         AppDbContext db,
@@ -114,7 +130,7 @@ public static class StudentPlanRowUpdater
         DateTime now)
     {
         var planId = memEnt.PlanId;
-        var level = memEnt.MemorizationLevel;
+        var level = ManualPlanRowHelper.ResolveLevel(request.SurahName, memEnt.MemorizationLevel);
         var status = memEnt.Status;
         db.StudentPlanMemorizings.Remove(memEnt);
         db.StudentPlanRevises.Add(CreateRevise(
@@ -131,7 +147,7 @@ public static class StudentPlanRowUpdater
         DateTime now)
     {
         var planId = revEnt.PlanId;
-        var level = revEnt.MemorizationLevel;
+        var level = ManualPlanRowHelper.ResolveLevel(request.SurahName, revEnt.MemorizationLevel);
         var status = revEnt.Status;
         db.StudentPlanRevises.Remove(revEnt);
         db.StudentPlanMemorizings.Add(CreateMemorizing(
@@ -152,13 +168,13 @@ public static class StudentPlanRowUpdater
             StudentId = studentId,
             PlanId = planId,
             MemorizationLevel = level,
-            SurahId = request.SurahId,
+            SurahId = ResolveSurahId(request),
             FromAyahNumber = request.FromAyahNumber,
             ToAyahNumber = request.ToAyahNumber,
             PlanDate = planStart,
             PlanEndDate = planEnd,
             CreatedAt = now,
-            Status = status ?? PlanRowStatus.Pending,
+            Status = status
         };
 
     private static StudentPlanRevise CreateRevise(
@@ -175,12 +191,12 @@ public static class StudentPlanRowUpdater
             StudentId = studentId,
             PlanId = planId,
             MemorizationLevel = level,
-            SurahId = request.SurahId,
+            SurahId = ResolveSurahId(request),
             FromAyahNumber = request.FromAyahNumber,
             ToAyahNumber = request.ToAyahNumber,
             PlanDate = planStart,
             PlanEndDate = planEnd,
             CreatedAt = now,
-            Status = status ?? PlanRowStatus.Pending,
+            Status = status
         };
 }

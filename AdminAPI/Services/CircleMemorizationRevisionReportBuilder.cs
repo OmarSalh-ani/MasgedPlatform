@@ -72,7 +72,14 @@ public static class CircleMemorizationRevisionReportBuilder
         var parts = new List<string>();
         foreach (var group in segments.GroupBy(s => s.SurahId).OrderBy(g => g.Min(x => x.FromAyah)).ThenBy(g => g.Key))
         {
-            var surahLabel = EnsureSurahPrefix(group.First().SurahName);
+            var first = group.First();
+            if (IsJuzHizbUnit(first.SurahName))
+            {
+                parts.Add(FormatJuzHizbLabel(first.SurahName, first.FromAyah));
+                continue;
+            }
+
+            var surahLabel = EnsureSurahPrefix(first.SurahName);
             var merged = MergeRanges(group.Select(x => (x.FromAyah, x.ToAyah)));
             if (merged.Count == 0)
                 continue;
@@ -114,6 +121,17 @@ public static class CircleMemorizationRevisionReportBuilder
         var trimmed = (name ?? "").Trim();
         if (string.IsNullOrEmpty(trimmed) || trimmed == "—")
             return "سورة —";
+        if (IsJuzHizbUnit(trimmed))
+            return trimmed;
         return trimmed.StartsWith("سورة", StringComparison.Ordinal) ? trimmed : "سورة " + trimmed;
     }
+
+    private static bool IsJuzHizbUnit(string? name)
+    {
+        var trimmed = (name ?? "").Trim();
+        return trimmed is "جزء" or "حزب";
+    }
+
+    private static string FormatJuzHizbLabel(string unitType, int number) =>
+        $"{unitType.Trim()} {number}";
 }

@@ -11,3 +11,9 @@ public class MemorizingArchiveItemDto
     public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+public class CreateJuzHizbReviewDto
+{
+    public string UnitType { get; set; } = string.Empty;
+    public int Number { get; set; }
+}

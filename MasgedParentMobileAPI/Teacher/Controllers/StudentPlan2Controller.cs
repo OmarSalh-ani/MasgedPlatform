@@ -73,16 +73,7 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
         if (request.StudentIds.Count == 0)
             return this.ToActionResult(GlobalResponse.BadRequest("يرجى اختيار طالب واحد على الأقل"));
 
-        List<PlanRowInputDto> rows;
-        try
-        {
-            rows = await ResolvePlanRowsAsync(request.Plan, cancellationToken);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return this.ToActionResult(GlobalResponse.BadRequest(ex.Message));
-        }
-
+        List<PlanRowInputDto> rows = request.Plan.Rows ?? [];
         if (rows.Count == 0)
             return this.ToActionResult(GlobalResponse.BadRequest("يرجى إضافة سطر واحد على الأقل"));
 
@@ -203,26 +194,6 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
             : $"نجح {response.SuccessCount} — فشل {response.FailedCount}";
 
         return this.ToActionResult(GlobalResponse.Ok(response, statusMessage));
-    }
-
-    [HttpPost("expand-rows")]
-    public async Task<IActionResult> ExpandPlanRows(
-        [FromBody] ExpandPlanRowsRequestDto request,
-        CancellationToken cancellationToken)
-    {
-        if (!TryGetTeacherContext(out _, out _))
-            return this.ToActionResult(GlobalResponse.Unauthorized());
-
-        try
-        {
-            var preview = await StudentPlan2Helper.ExpandPlanRowsPreviewAsync(
-                db, request, cancellationToken);
-            return this.ToActionResult(GlobalResponse.Ok(preview));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return this.ToActionResult(GlobalResponse.BadRequest(ex.Message));
-        }
     }
 
     [HttpGet("surahs/{surahId:int}/ayahs")]
@@ -357,16 +328,7 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
         if (await GetStudentForWriteAsync(studentId, circleId, cancellationToken) is null)
             return this.ToActionResult(GlobalResponse.NotFound("الطالب غير موجود"));
 
-        List<PlanRowInputDto> rows;
-        try
-        {
-            rows = await ResolvePlanRowsAsync(request, cancellationToken);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return this.ToActionResult(GlobalResponse.BadRequest(ex.Message));
-        }
-
+        var rows = request.Rows ?? [];
         if (rows.Count == 0)
             return this.ToActionResult(GlobalResponse.BadRequest("يرجى إضافة سطر واحد على الأقل"));
 
@@ -411,16 +373,7 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
         if (plan is null)
             return this.ToActionResult(GlobalResponse.NotFound("الخطة غير موجودة"));
 
-        List<PlanRowInputDto> rows;
-        try
-        {
-            rows = await ResolvePlanRowsAsync(request, cancellationToken);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return this.ToActionResult(GlobalResponse.BadRequest(ex.Message));
-        }
-
+        var rows = request.Rows ?? [];
         if (rows.Count == 0)
             return this.ToActionResult(GlobalResponse.BadRequest("يرجى إضافة سطر واحد على الأقل"));
 
@@ -927,21 +880,6 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
         return plan.Id;
     }
 
-    private async Task<List<PlanRowInputDto>> ResolvePlanRowsAsync(
-        SavePlanRowsRequestDto request,
-        CancellationToken cancellationToken)
-    {
-        var rows = new List<PlanRowInputDto>(request.Rows);
-        if (request.Range is not null)
-        {
-            var rangeRows = await StudentPlan2Helper.ExpandSurahRangeAsync(
-                db, request.Range, cancellationToken);
-            rows.AddRange(rangeRows);
-        }
-
-        return rows;
-    }
-
     private async Task AddPlanRowsAsync(
         int studentId,
         int planId,
@@ -997,8 +935,10 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                 {
                     StudentId = studentId,
                     PlanId = planId,
-                    MemorizationLevel = "—",
-                    SurahId = row.SurahId,
+                    MemorizationLevel = ManualPlanRowHelper.ResolveLevel(row.SurahName),
+                    SurahId = string.IsNullOrWhiteSpace(row.SurahName)
+                        ? row.SurahId
+                        : ManualPlanRowHelper.PlaceholderSurahId,
                     FromAyahNumber = row.FromAyahNumber,
                     ToAyahNumber = row.ToAyahNumber,
                     PlanDate = rowDate,
@@ -1014,8 +954,10 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                 {
                     StudentId = studentId,
                     PlanId = planId,
-                    MemorizationLevel = "—",
-                    SurahId = row.SurahId,
+                    MemorizationLevel = ManualPlanRowHelper.ResolveLevel(row.SurahName),
+                    SurahId = string.IsNullOrWhiteSpace(row.SurahName)
+                        ? row.SurahId
+                        : ManualPlanRowHelper.PlaceholderSurahId,
                     FromAyahNumber = row.FromAyahNumber,
                     ToAyahNumber = row.ToAyahNumber,
                     PlanDate = rowDate,
@@ -1044,6 +986,7 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
                     surahId: row.SurahId,
                     fromAyah: row.FromAyahNumber,
                     toAyah: row.ToAyahNumber,
+                    manualSurahName: row.SurahName,
                     cancellationToken: cancellationToken);
             }
         }
@@ -1205,6 +1148,9 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
             surahId: surahId,
             fromAyah: fromAyah,
             toAyah: confirmed,
+            manualSurahName: ManualPlanRowHelper.IsManual(memorizationLevel)
+                ? ManualPlanRowHelper.ExtractName(memorizationLevel)
+                : null,
             cancellationToken: cancellationToken);
 
         return confirmed;
@@ -1218,13 +1164,16 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
         int surahId,
         int fromAyah,
         int toAyah,
+        string? manualSurahName,
         CancellationToken cancellationToken)
     {
         var now = KuwaitTime.Now;
-        var surahName = await db.QuranSurahs.AsNoTracking()
-            .Where(s => s.Id == surahId)
-            .Select(s => s.NameAr)
-            .FirstOrDefaultAsync(cancellationToken) ?? "";
+        var surahName = !string.IsNullOrWhiteSpace(manualSurahName)
+            ? manualSurahName.Trim()
+            : await db.QuranSurahs.AsNoTracking()
+                .Where(s => s.Id == surahId)
+                .Select(s => s.NameAr)
+                .FirstOrDefaultAsync(cancellationToken) ?? "";
 
         db.StudentMemorizingCards.Add(new StudentMemorizingCard
         {

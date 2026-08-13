@@ -72,6 +72,7 @@ public class PlanRowDto
     public string StatusDisplay { get; set; } = string.Empty;
     public DateTime? MemorizeDate { get; set; }
     public DateTime? ReviseDate { get; set; }
+    public bool IsManual { get; set; }
 }
 
 public class CalendarDayDto
@@ -106,7 +107,6 @@ public class SavePlanRowsRequestDto
     public DateTime? PlanEndDate { get; set; }
     public string? PlanName { get; set; }
     public List<PlanRowInputDto> Rows { get; set; } = [];
-    public SurahRangeSelectionDto? Range { get; set; }
 }
 
 public class BulkAssignPlanRequestDto
@@ -132,41 +132,10 @@ public class BulkAssignPlanStudentResultDto
     public string? Message { get; set; }
 }
 
-public class ExpandPlanRowsRequestDto
-{
-    public string PlanType { get; set; } = "حفظ";
-    public SurahRangeSelectionDto? Range { get; set; }
-    public List<PlanRowInputDto> Rows { get; set; } = [];
-}
-
-public class SurahRangeSelectionDto
-{
-    public int FromSurahId { get; set; }
-    /// <summary>First ayah on the from surah.</summary>
-    public int FromAyahNumber { get; set; }
-    /// <summary>Last ayah on the from surah. If 0, equals <see cref="FromAyahNumber"/>.</summary>
-    public int FromAyahEnd { get; set; }
-    public int ToSurahId { get; set; }
-    /// <summary>First ayah on the to surah. If 0, uses 1.</summary>
-    public int ToAyahStart { get; set; }
-    /// <summary>Last ayah on the to surah.</summary>
-    public int ToAyahNumber { get; set; }
-    public bool IsReversed { get; set; }
-    public string PlanType { get; set; } = "حفظ";
-}
-
-public class ExpandedPlanRowPreviewDto
-{
-    public int SurahId { get; set; }
-    public string SurahName { get; set; } = string.Empty;
-    public int FromAyahNumber { get; set; }
-    public int ToAyahNumber { get; set; }
-    public string PlanType { get; set; } = string.Empty;
-}
-
 public class PlanRowInputDto
 {
     public int SurahId { get; set; }
+    public string? SurahName { get; set; }
     public int FromAyahNumber { get; set; }
     public int ToAyahNumber { get; set; }
     public string PlanType { get; set; } = "حفظ";
@@ -222,6 +191,7 @@ public class SaveNextDateRequestDto
 public class UpdatePlanRowRequestDto
 {
     public int SurahId { get; set; }
+    public string? SurahName { get; set; }
     public int FromAyahNumber { get; set; }
     public int ToAyahNumber { get; set; }
     public string? PlanType { get; set; }
