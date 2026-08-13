@@ -25,9 +25,6 @@ AdminAPI/FilesManager/
 AdminAPI/Logs/
 MasgedParentMobileAPI/Uploads/
 
-# Flutter app lives in its own repo: OmarSalh-ani/Masged-Mubarak-Flutter
-ParentApp/
-
 # Flutter / Dart
 .dart_tool/
 **/.dart_tool/
