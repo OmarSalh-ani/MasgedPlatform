@@ -1,5 +1,11 @@
 namespace AdminAPI.DTOs.CircleMemorizationRevisionReport;
 
+public class CircleMemorizationSurahChipDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string RangeText { get; set; } = string.Empty;
+}
+
 public class CircleMemorizationRevisionReportRowDto
 {
     public int Sequence { get; set; }
@@ -8,6 +14,8 @@ public class CircleMemorizationRevisionReportRowDto
     public DateTime Date { get; set; }
     public string NewMemorization { get; set; } = string.Empty;
     public string Revision { get; set; } = string.Empty;
+    public List<CircleMemorizationSurahChipDto> NewMemorizationChips { get; set; } = [];
+    public List<CircleMemorizationSurahChipDto> RevisionChips { get; set; } = [];
 }
 
 public class CircleMemorizationRevisionReportMetaDto

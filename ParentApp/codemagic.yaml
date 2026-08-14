@@ -1,0 +1,73 @@
+workflows:
+  flutter-ios-signed:
+    name: Flutter iOS (App Store)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Mubarak Masged
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mubarakmasged.com
+      vars:
+        BUNDLE_ID: com.mubarakmasged.com
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Set up code signing on Xcode project
+        script: xcode-project use-profiles
+      - name: Clean and fetch dependencies
+        script: |
+          flutter clean
+          flutter pub get
+      - name: Prepare App Store What's New (Arabic)
+        script: |
+          cat > release_notes.json << 'EOF'
+          [
+            {
+              "language": "ar-SA",
+              "text": "تحسينات في الأداء"
+            }
+          ]
+          EOF
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          rm -f Podfile.lock
+          pod install --repo-update
+      - name: Build IPA
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Upload IPA and submit for App Store review (production), not TestFlight.
+        submit_to_testflight: false
+        submit_to_app_store: true
+        cancel_previous_submissions: true
+        # Release automatically after Apple approves. Use MANUAL to release yourself in ASC.
+        release_type: AFTER_APPROVAL
+
+  flutter-ios-unsigned:
+    name: Flutter iOS (compile check, no signing)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Install CocoaPods dependencies
+        script: find . -name "Podfile" -execdir sh -c 'rm -f Podfile.lock && pod install --repo-update' \;
+      - name: Build iOS debug without code signing
+        script: flutter build ios --debug --no-codesign
+    artifacts:
+      - build/ios/iphoneos/**/*.app
+      - /tmp/xcodebuild_logs/*.log

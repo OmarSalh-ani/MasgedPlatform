@@ -1,0 +1,15 @@
+/// Shared features available to parent and teacher roles.
+library;
+
+export '../ziker/screens/ziker_screen.dart';
+export '../ziker/screens/ziker_stats_screen.dart';
+export '../prayer/screens/prayer_times_screen.dart';
+export '../prayer/screens/qibla_screen.dart';
+export '../mosque/screens/nearest_mosques_screen.dart';
+export '../quran/screens/quran_main_screen.dart';
+export '../quran/screens/surah_detail_screen.dart';
+export '../home/screens/masged_news_screen.dart';
+export '../home/screens/news_details_screen.dart';
+export '../adhkar/screens/adhkar_home_screen.dart';
+export '../adhkar/screens/adhkar_group_screen.dart';
+export '../adhkar/screens/adhkar_detail_screen.dart';

@@ -108,24 +108,33 @@ public class MemorizationRevisionReportController(AppDbContext db) : ControllerB
 
         byte[] bytes;
         string contentType;
-        string fileName;
+        string extension;
 
-        if (formatKey is "excel" or "xlsx")
+        try
         {
-            bytes = CircleMemorizationRevisionReportExcelExporter.Build(meta);
-            contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            fileName = "تقرير_الحفظ_والمراجعة_" +
-                       KuwaitTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".xlsx";
+            if (formatKey is "excel" or "xlsx")
+            {
+                bytes = CircleMemorizationRevisionReportExcelExporter.Build(meta);
+                contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                extension = "xlsx";
+            }
+            else
+            {
+                bytes = CircleMemorizationRevisionReportPdfExporter.Build(meta);
+                contentType = "application/pdf";
+                extension = "pdf";
+            }
         }
-        else
+        catch (Exception)
         {
-            bytes = CircleMemorizationRevisionReportPdfExporter.Build(meta);
-            contentType = "application/pdf";
-            fileName = "تقرير_الحفظ_والمراجعة_" +
-                       KuwaitTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".pdf";
+            return this.ToActionResult(GlobalResponse.BadRequest("تعذر توليد التقرير. يرجى المحاولة مرة أخرى."));
         }
 
-        return File(bytes, contentType, fileName);
+        if (bytes.Length == 0)
+            return this.ToActionResult(GlobalResponse.BadRequest("تعذر توليد التقرير. يرجى المحاولة مرة أخرى."));
+
+        var fileName = ReportFileDownloadHelper.BuildCircleMemorizationReportFileName(extension);
+        return ReportFileDownloadHelper.Create(bytes, contentType, fileName);
     }
 
     [HttpGet("students")]

@@ -44,9 +44,11 @@ public static class CircleMemorizationRevisionReportBuilder
             memByKey.TryGetValue(key, out var memSegments);
             revByKey.TryGetValue(key, out var revSegments);
 
-            var newText = FormatMerged(memSegments);
-            var revText = FormatMerged(revSegments);
-            if (string.IsNullOrWhiteSpace(newText) && string.IsNullOrWhiteSpace(revText))
+            var newChips = BuildChips(memSegments);
+            var revChips = BuildChips(revSegments);
+            var newText = FormatMerged(newChips);
+            var revText = FormatMerged(revChips);
+            if (newChips.Count == 0 && revChips.Count == 0)
                 continue;
 
             studentNames.TryGetValue(key.StudentId, out var studentName);
@@ -58,37 +60,61 @@ public static class CircleMemorizationRevisionReportBuilder
                 Date = key.Date,
                 NewMemorization = newText,
                 Revision = revText,
+                NewMemorizationChips = newChips,
+                RevisionChips = revChips,
             });
         }
 
         return rows;
     }
 
-    private static string FormatMerged(IReadOnlyList<CirclePlanSegmentDto>? segments)
+    private static string FormatMerged(IReadOnlyList<CircleMemorizationSurahChipDto> chips)
     {
-        if (segments is null || segments.Count == 0)
+        if (chips.Count == 0)
             return string.Empty;
 
-        var parts = new List<string>();
-        foreach (var group in segments.GroupBy(s => s.SurahId).OrderBy(g => g.Min(x => x.FromAyah)).ThenBy(g => g.Key))
+        return string.Join(" و ", chips.Select(chip =>
+            string.IsNullOrWhiteSpace(chip.RangeText)
+                ? chip.Title
+                : $"{chip.Title} {chip.RangeText}"));
+    }
+
+    private static List<CircleMemorizationSurahChipDto> BuildChips(IReadOnlyList<CirclePlanSegmentDto>? segments)
+    {
+        if (segments is null || segments.Count == 0)
+            return [];
+
+        segments = DedupeByAyahRange(segments);
+
+        var chips = new List<CircleMemorizationSurahChipDto>();
+        foreach (var group in segments
+                     .GroupBy(s => s.SurahId)
+                     .OrderBy(g => g.Min(x => x.FromAyah))
+                     .ThenBy(g => g.Key))
         {
             var first = group.First();
             if (IsJuzHizbUnit(first.SurahName))
             {
-                parts.Add(FormatJuzHizbLabel(first.SurahName, first.FromAyah));
+                chips.Add(new CircleMemorizationSurahChipDto
+                {
+                    Title = FormatJuzHizbLabel(first.SurahName, first.FromAyah),
+                });
                 continue;
             }
 
-            var surahLabel = EnsureSurahPrefix(first.SurahName);
             var merged = MergeRanges(group.Select(x => (x.FromAyah, x.ToAyah)));
             if (merged.Count == 0)
                 continue;
 
             var rangeText = string.Join(" و ", merged.Select(r => $"من {r.From} الى {r.To}"));
-            parts.Add($"{surahLabel} {rangeText}");
+            chips.Add(new CircleMemorizationSurahChipDto
+            {
+                Title = EnsureSurahPrefix(first.SurahName),
+                RangeText = rangeText,
+            });
         }
 
-        return string.Join(" و ", parts);
+        return chips;
     }
 
     public static List<(int From, int To)> MergeRanges(IEnumerable<(int From, int To)> ranges)
@@ -114,6 +140,24 @@ public static class CircleMemorizationRevisionReportBuilder
         }
 
         return result;
+    }
+
+    private static List<CirclePlanSegmentDto> DedupeByAyahRange(IReadOnlyList<CirclePlanSegmentDto> segments) =>
+        segments
+            .GroupBy(s => (
+                From: Math.Min(s.FromAyah, s.ToAyah),
+                To: Math.Max(s.FromAyah, s.ToAyah)))
+            .Select(g => g.OrderByDescending(s => SegmentNamePriority(s.SurahName)).First())
+            .ToList();
+
+    private static int SegmentNamePriority(string? name)
+    {
+        var trimmed = (name ?? "").Trim();
+        if (IsJuzHizbUnit(trimmed))
+            return 2;
+        if (!string.IsNullOrEmpty(trimmed) && trimmed != "—")
+            return 1;
+        return 0;
     }
 
     private static string EnsureSurahPrefix(string name)

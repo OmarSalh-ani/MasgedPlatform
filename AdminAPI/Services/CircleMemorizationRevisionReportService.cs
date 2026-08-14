@@ -57,19 +57,18 @@ public class CircleMemorizationRevisionReportService(
         };
 
         var formatKey = (format ?? "pdf").Trim().ToLowerInvariant();
-        var stamp = KuwaitTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
 
         if (formatKey is "excel" or "xlsx")
         {
             return (
                 CircleMemorizationRevisionReportExcelExporter.Build(meta),
-                "تقرير_الحفظ_والمراجعة_" + stamp + ".xlsx",
+                ReportFileDownloadHelper.BuildCircleMemorizationReportFileName("xlsx"),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         }
 
         return (
             CircleMemorizationRevisionReportPdfExporter.Build(meta),
-            "تقرير_الحفظ_والمراجعة_" + stamp + ".pdf",
+            ReportFileDownloadHelper.BuildCircleMemorizationReportFileName("pdf"),
             "application/pdf");
     }
 }

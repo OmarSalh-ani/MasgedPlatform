@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "438891431699",
+    "project_id": "mubarak-masged-mobile",
+    "storage_bucket": "mubarak-masged-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:438891431699:android:4a7f93d073c40dacf6bce6",
+        "android_client_info": {
+          "package_name": "com.mubarakmasged.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvH8FqibnX6l3sVdu3X_QJM9LA4pIM5CI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
