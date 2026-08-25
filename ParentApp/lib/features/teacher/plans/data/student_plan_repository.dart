@@ -99,4 +99,11 @@ class StudentPlanRepository {
 
   Future<BulkAssignPlanResponse> bulkAssignPlans(BulkAssignPlanRequest request) =>
       _api.bulkAssignPlans(request);
+
+  Future<List<ExpandedPlanRowPreview>> expandRows({
+    String planType = 'حفظ',
+    SurahRangeSelection? range,
+    List<PlanRowInput> rows = const [],
+  }) =>
+      _api.expandRows(planType: planType, range: range, rows: rows);
 }

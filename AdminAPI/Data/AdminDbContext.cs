@@ -54,6 +54,11 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options) : DbContex
     public DbSet<PushDeliveryLog> PushDeliveryLogs => Set<PushDeliveryLog>();
     public DbSet<CircleVisitRating> CircleVisitRatings => Set<CircleVisitRating>();
     public DbSet<CircleVisitRatingItem> CircleVisitRatingItems => Set<CircleVisitRatingItem>();
+    public DbSet<EventPage> EventPages => Set<EventPage>();
+    public DbSet<EventPageTrack> EventPageTracks => Set<EventPageTrack>();
+    public DbSet<EventPageFormField> EventPageFormFields => Set<EventPageFormField>();
+    public DbSet<EventPageResponse> EventPageResponses => Set<EventPageResponse>();
+    public DbSet<EventPageResponseValue> EventPageResponseValues => Set<EventPageResponseValue>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -684,6 +689,75 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options) : DbContex
                 .HasForeignKey(d => d.CircleVisitRatingId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_CircleVisitRatingItems_CircleVisitRatings");
+        });
+
+        modelBuilder.Entity<EventPage>(entity =>
+        {
+            entity.ToTable("EventPages");
+            entity.Property(e => e.ActivityName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(120);
+            entity.Property(e => e.CourseTitle).IsRequired().HasMaxLength(300);
+            entity.Property(e => e.InvitationText).HasMaxLength(500);
+            entity.Property(e => e.MosqueName).HasMaxLength(300);
+            entity.Property(e => e.SubjectText).HasMaxLength(1000);
+            entity.Property(e => e.DateText).HasMaxLength(300);
+            entity.Property(e => e.TimeText).HasMaxLength(300);
+            entity.Property(e => e.SupervisorsText).HasMaxLength(1000);
+            entity.Property(e => e.ContactPhone).HasMaxLength(50);
+            entity.Property(e => e.SocialAccounts).HasMaxLength(200);
+            entity.Property(e => e.LocationNote).HasMaxLength(500);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.HasIndex(e => e.ActivityName).IsUnique();
+            entity.HasIndex(e => e.Slug).IsUnique();
+        });
+
+        modelBuilder.Entity<EventPageTrack>(entity =>
+        {
+            entity.ToTable("EventPageTracks");
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(300);
+            entity.HasOne(d => d.EventPage)
+                .WithMany(p => p.Tracks)
+                .HasForeignKey(d => d.EventPageId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_EventPageTracks_EventPages");
+        });
+
+        modelBuilder.Entity<EventPageFormField>(entity =>
+        {
+            entity.ToTable("EventPageFormFields");
+            entity.Property(e => e.Label).IsRequired().HasMaxLength(300);
+            entity.Property(e => e.FieldType).IsRequired().HasMaxLength(30);
+            entity.HasOne(d => d.EventPage)
+                .WithMany(p => p.FormFields)
+                .HasForeignKey(d => d.EventPageId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_EventPageFormFields_EventPages");
+        });
+
+        modelBuilder.Entity<EventPageResponse>(entity =>
+        {
+            entity.ToTable("EventPageResponses");
+            entity.Property(e => e.ActivityName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.SubmittedAt).HasColumnType("datetime");
+            entity.HasOne(d => d.EventPage)
+                .WithMany(p => p.Responses)
+                .HasForeignKey(d => d.EventPageId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_EventPageResponses_EventPages");
+            entity.HasIndex(e => e.ActivityName);
+            entity.HasIndex(e => e.SubmittedAt);
+        });
+
+        modelBuilder.Entity<EventPageResponseValue>(entity =>
+        {
+            entity.ToTable("EventPageResponseValues");
+            entity.Property(e => e.FieldLabel).IsRequired().HasMaxLength(300);
+            entity.HasOne(d => d.Response)
+                .WithMany(p => p.Values)
+                .HasForeignKey(d => d.ResponseId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_EventPageResponseValues_Responses");
         });
     }
 }

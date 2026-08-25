@@ -12,6 +12,7 @@ namespace MasgedParentMobileAPI.Services;
 public sealed class MemorizingArchiveService
 {
     private const int MaxPageSize = 50;
+    private const string TypeMemorizing = "حفظ";
     private const string TypeRevision = "مراجعة";
     private const string UnitJozz = "جزء";
     private const string UnitHezb = "حزب";
@@ -175,6 +176,9 @@ public sealed class MemorizingArchiveService
         return trimmed is "حفظ" or "مراجعة" ? trimmed : null;
     }
 
+    private static string MapDoneStatus(string theType, string isDone, string? isSaveDone) =>
+        theType == TypeMemorizing ? (isSaveDone ?? string.Empty) : isDone;
+
     private static MemorizingArchiveItemDto MapItem(TeacherMemorizingCard card) =>
         new()
         {
@@ -183,7 +187,7 @@ public sealed class MemorizingArchiveService
             TestFrom = card.TestFrom,
             TestTo = card.TestTo,
             SurahName = card.SurahName ?? string.Empty,
-            IsDone = card.IsDone,
+            IsDone = MapDoneStatus(card.TheType, card.IsDone, card.IsSaveDone),
             Notes = card.Notes,
             CreatedAt = card.CreatedAt,
         };
@@ -208,7 +212,9 @@ public sealed class MemorizingArchiveService
                 TestFrom = x.TestFrom,
                 TestTo = x.TestTo,
                 SurahName = x.SurahName ?? string.Empty,
-                IsDone = x.IsDone,
+                IsDone = x.TheType == TypeMemorizing
+                    ? (x.IsSaveDone ?? string.Empty)
+                    : x.IsDone,
                 Notes = x.Notes,
                 CreatedAt = x.CreatedAt,
             })
@@ -244,7 +250,9 @@ public sealed class MemorizingArchiveService
                 TestFrom = x.TestFrom,
                 TestTo = x.TestTo,
                 SurahName = x.SurahName ?? string.Empty,
-                IsDone = x.IsDone,
+                IsDone = x.TheType == TypeMemorizing
+                    ? (x.IsSaveDone ?? string.Empty)
+                    : x.IsDone,
                 Notes = x.Notes,
                 CreatedAt = x.CreatedAt,
             })

@@ -10,7 +10,7 @@ public class TestsReportService(
     ICurrentUserContext currentUser) : ITestsReportService
 {
     private const string ProgramType = "حلقات تحفيظ القرآن الكريم";
-    private const string GridTestType = "اختبار";
+    private const string GridTestType = TestRangeResolver.DefaultTestType;
     private static readonly CultureInfo DisplayCulture = CultureInfo.InvariantCulture;
 
     public async Task<TestsReportFilterOptionsDto> GetFilterOptionsAsync(

@@ -9,6 +9,7 @@ import { ParentsFollowupPage } from '@/pages/parents-followup/ParentsFollowupPag
 import { RegisterSuccessPage } from '@/pages/RegisterSuccessPage/RegisterSuccessPage'
 import { RegistrationPage } from '@/pages/RegistrationPage/RegistrationPage'
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage/PrivacyPolicyPage'
+import { EventLandingPage } from '@/pages/EventPage/EventLandingPage'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/register-success" element={<RegisterSuccessPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage locale="ar" />} />
         <Route path="/privacy-policy/en" element={<PrivacyPolicyPage locale="en" />} />
+        <Route path="/p/:slug" element={<EventLandingPage />} />
       </Route>
     </Routes>
   )

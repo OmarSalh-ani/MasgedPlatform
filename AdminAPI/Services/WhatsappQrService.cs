@@ -9,7 +9,7 @@ namespace AdminAPI.Services;
 
 public class WhatsappQrService(
     IWasenderSessionClient wasenderSessionClient,
-    WhatsappQrSessionStore sessionStore,
+    IWhatsappSessionStore sessionStore,
     WasenderSessionKeySyncService sessionKeySync,
     ICurrentUserContext currentUser) : IWhatsappQrService
 {

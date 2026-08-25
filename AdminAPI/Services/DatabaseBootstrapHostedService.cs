@@ -30,6 +30,7 @@ public class DatabaseBootstrapHostedService(
                 await EnsureIntegrationSettingsTableAsync(db, cancellationToken);
                 await EnsureCircleVisitRatingsTablesAsync(db, cancellationToken);
                 await EnsureTeacherIsSupervisorColumnAsync(db, cancellationToken);
+                await EventPageSchemaBootstrap.EnsureTablesAsync(db, cancellationToken);
 
                 if (ensureDatabase)
                     await EnsureDefaultSettingsRowAsync(db, cancellationToken);

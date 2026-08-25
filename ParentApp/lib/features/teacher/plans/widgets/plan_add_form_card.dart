@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:masged_parent_app/core/theme/app_colors.dart';
 import 'package:masged_parent_app/core/theme/app_fonts.dart';
 import 'package:masged_parent_app/shared/widgets/custom_button.dart';
+import 'package:masged_parent_app/teacher_core/network/api_exception.dart';
 
 import '../models/plan_row_status.dart';
 import '../models/student_plan_models.dart';
@@ -31,6 +32,17 @@ class _PlanAddFormCardState extends ConsumerState<PlanAddFormCard>
 
   String _planType = 'حفظ';
 
+  // Range tab
+  int? _rangeFromSurahId;
+  int? _rangeToSurahId;
+  int? _rangeFromAyahStart;
+  int? _rangeFromAyahEnd;
+  int? _rangeToAyahStart;
+  int? _rangeToAyahEnd;
+  bool _rangeIsReversed = false;
+  List<ExpandedPlanRowPreview> _rangePreview = [];
+  bool _isExpanding = false;
+
   // Flexible tab
   int? _flexSurahId;
   int? _flexFromAyah;
@@ -54,7 +66,7 @@ class _PlanAddFormCardState extends ConsumerState<PlanAddFormCard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -144,6 +156,7 @@ class _PlanAddFormCardState extends ConsumerState<PlanAddFormCard>
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSecondary,
             tabs: const [
+              Tab(text: 'خطة من سورة الى سورة'),
               Tab(text: 'خطة مرنة'),
               Tab(text: 'حفظ يدوي'),
             ],
@@ -155,6 +168,7 @@ class _PlanAddFormCardState extends ConsumerState<PlanAddFormCard>
             child: IndexedStack(
               index: _tabController.index,
               children: [
+                _buildRangeTab(),
                 _buildFlexibleTab(),
                 _buildManualTab(),
               ],
@@ -199,6 +213,216 @@ class _PlanAddFormCardState extends ConsumerState<PlanAddFormCard>
         }).toList(),
       ),
     );
+  }
+
+  Widget _buildRangeTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'من',
+          style: AppFonts.cairo(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildSurahAyahRow(
+          surahId: _rangeFromSurahId,
+          onSurahChanged: (v) => setState(() {
+            _rangeFromSurahId = v;
+            _rangeFromAyahStart = null;
+            _rangeFromAyahEnd = null;
+            _rangePreview = [];
+          }),
+          fromAyah: _rangeFromAyahStart,
+          toAyah: _rangeFromAyahEnd,
+          onFromAyah: (v) => setState(() {
+            _rangeFromAyahStart = v;
+            _rangePreview = [];
+          }),
+          onToAyah: (v) => setState(() {
+            _rangeFromAyahEnd = v;
+            _rangePreview = [];
+          }),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'إلى',
+          style: AppFonts.cairo(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildSurahAyahRow(
+          surahId: _rangeToSurahId,
+          onSurahChanged: (v) => setState(() {
+            _rangeToSurahId = v;
+            _rangeToAyahStart = null;
+            _rangeToAyahEnd = null;
+            _rangePreview = [];
+          }),
+          fromAyah: _rangeToAyahStart,
+          toAyah: _rangeToAyahEnd,
+          onFromAyah: (v) => setState(() {
+            _rangeToAyahStart = v;
+            _rangePreview = [];
+          }),
+          onToAyah: (v) => setState(() {
+            _rangeToAyahEnd = v;
+            _rangePreview = [];
+          }),
+        ),
+        const SizedBox(height: 8),
+        _buildReverseTile(),
+        if (_rangePreview.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            'معاينة (${_rangePreview.length} سطر)',
+            style: AppFonts.cairo(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _rangePreview
+                .map(
+                  (row) => Chip(
+                    label: Text(
+                      '${row.surahName} ${row.fromAyahNumber}-${row.toAyahNumber}',
+                      style: AppFonts.cairo(fontSize: 12),
+                    ),
+                    backgroundColor: AppColors.primaryLight,
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: CustomButton(
+                text: 'معاينة',
+                onPressed: _isExpanding ? null : _previewRange,
+                height: 44,
+                isOutlined: true,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: CustomButton(
+                text: 'إضافة للجدول',
+                onPressed: _isExpanding ? null : _addRangeToTable,
+                height: 44,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReverseTile() {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      value: _rangeIsReversed,
+      activeThumbColor: AppColors.primary,
+      title: Text(
+        'عكس ترتيب المصحف',
+        style: AppFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14),
+      ),
+      subtitle: Text(
+        _rangeIsReversed ? 'من الأخير إلى الأول' : 'من الأول إلى الأخير',
+        style: AppFonts.cairo(fontSize: 12, color: AppColors.textSecondary),
+      ),
+      onChanged: (v) => setState(() {
+        _rangeIsReversed = v;
+        _rangePreview = [];
+      }),
+    );
+  }
+
+  SurahRangeSelection? _buildRangeSelection() {
+    if (_rangeFromSurahId == null ||
+        _rangeToSurahId == null ||
+        _rangeFromAyahStart == null ||
+        _rangeFromAyahEnd == null ||
+        _rangeToAyahStart == null ||
+        _rangeToAyahEnd == null ||
+        _rangeFromAyahStart! <= 0 ||
+        _rangeFromAyahEnd! <= 0 ||
+        _rangeToAyahStart! <= 0 ||
+        _rangeToAyahEnd! <= 0 ||
+        _rangeFromAyahStart! > _rangeFromAyahEnd! ||
+        _rangeToAyahStart! > _rangeToAyahEnd!) {
+      return null;
+    }
+
+    return SurahRangeSelection(
+      fromSurahId: _rangeFromSurahId!,
+      fromAyahNumber: _rangeFromAyahStart!,
+      fromAyahEnd: _rangeFromAyahEnd!,
+      toSurahId: _rangeToSurahId!,
+      toAyahStart: _rangeToAyahStart!,
+      toAyahNumber: _rangeToAyahEnd!,
+      isReversed: _rangeIsReversed,
+      planType: _planType,
+    );
+  }
+
+  Future<List<ExpandedPlanRowPreview>?> _expandRange() async {
+    final range = _buildRangeSelection();
+    if (range == null) {
+      _notify('يرجى إكمال بيانات النطاق بشكل صحيح', isError: true);
+      return null;
+    }
+
+    setState(() => _isExpanding = true);
+    try {
+      return await ref.read(studentPlanRepositoryProvider).expandRows(
+            planType: _planType,
+            range: range,
+          );
+    } on ApiException catch (e) {
+      _notify(e.message, isError: true);
+      return null;
+    } catch (_) {
+      _notify('تعذر توسيع النطاق', isError: true);
+      return null;
+    } finally {
+      if (mounted) setState(() => _isExpanding = false);
+    }
+  }
+
+  Future<void> _previewRange() async {
+    final preview = await _expandRange();
+    if (preview == null || !mounted) return;
+    setState(() => _rangePreview = preview);
+    _notify('تم إنشاء معاينة لـ ${preview.length} سطر');
+  }
+
+  Future<void> _addRangeToTable() async {
+    final preview = await _expandRange();
+    if (preview == null || preview.isEmpty) return;
+
+    final rows = preview.map((row) => row.toInput()).toList();
+    widget.onRowsAdded(rows);
+    _notify('تمت إضافة ${rows.length} سطراً للجدول');
+    setState(() {
+      _rangeFromAyahStart = null;
+      _rangeFromAyahEnd = null;
+      _rangeToAyahStart = null;
+      _rangeToAyahEnd = null;
+      _rangePreview = [];
+    });
   }
 
   Widget _buildFlexibleTab() {

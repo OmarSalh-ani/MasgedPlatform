@@ -1,6 +1,7 @@
 using AdminAPI.Data;
 using AdminAPI.DTOs.Tests;
 using AdminAPI.Repositories.Interfaces;
+using AdminAPI.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AdminAPI.Repositories;
@@ -21,7 +22,7 @@ public class TestsReportRepository(AdminDbContext db) : ITestsReportRepository
             })
             .ToListAsync(cancellationToken);
 
-    public Task<List<TestsReportSourceRow>> GetReportRowsAsync(
+    public async Task<List<TestsReportSourceRow>> GetReportRowsAsync(
         DateTime fromDate,
         DateTime toDateExclusive,
         int? circleId,
@@ -34,24 +35,44 @@ public class TestsReportRepository(AdminDbContext db) : ITestsReportRepository
         if (circleId is > 0)
             query = query.Where(t => t.Student != null && t.Student.QuranCircleId == circleId.Value);
 
-        return query
+        var rows = await query
             .OrderByDescending(t => t.CreatedAt)
-            .Select(t => new TestsReportSourceRow
+            .Select(t => new
             {
-                StudentId = t.StudentId,
+                t.StudentId,
                 StudentName = t.Student != null ? t.Student.StudentName : string.Empty,
                 ParentPhone = t.Student != null ? (t.Student.FatherPhone ?? string.Empty) : string.Empty,
                 TeacherName = t.Teacher != null ? t.Teacher.Name : string.Empty,
                 CircleName = t.Student != null && t.Student.QuranCircle != null
                     ? t.Student.QuranCircle.Name
                     : string.Empty,
-                TestFrom = t.TestFrom ?? string.Empty,
-                TestTo = t.TestTo ?? string.Empty,
+                t.TestFrom,
+                t.TestTo,
+                t.SurahName,
+                t.HezbNumber,
+                t.CreatedAt,
+                t.FinalResult,
+                t.Notes,
+                t.TestName,
+                t.TestType,
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .Select(t => new TestsReportSourceRow
+            {
+                StudentId = t.StudentId,
+                StudentName = t.StudentName ?? string.Empty,
+                ParentPhone = t.ParentPhone ?? string.Empty,
+                TeacherName = t.TeacherName ?? string.Empty,
+                CircleName = t.CircleName ?? string.Empty,
+                TestFrom = TestRangeResolver.ResolveFrom(t.TestFrom, t.HezbNumber, t.SurahName),
+                TestTo = TestRangeResolver.ResolveTo(t.TestTo, t.HezbNumber, t.SurahName),
                 TestDate = t.CreatedAt,
                 FinalResults = t.FinalResult,
                 Notes = t.Notes ?? string.Empty,
-                TestName = t.TestName ?? string.Empty,
+                TestName = TestRangeResolver.ResolveTestType(t.TestName, t.TestType),
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 }

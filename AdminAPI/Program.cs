@@ -83,6 +83,20 @@ builder.Services.Configure<MosqueUploadOptions>(options =>
 });
 builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
+var eventPageUploadDirectory = Path.Combine(
+    builder.Environment.ContentRootPath,
+    "Uploads",
+    "EventPages");
+Directory.CreateDirectory(eventPageUploadDirectory);
+builder.Services.Configure<EventPageUploadOptions>(options =>
+{
+    options.Directory = eventPageUploadDirectory;
+});
+builder.Services.AddScoped<IEventPageRepository, EventPageRepository>();
+builder.Services.AddScoped<IEventPageService, EventPageService>();
+builder.Services.AddScoped<IEventPageResponseRepository, EventPageResponseRepository>();
+builder.Services.AddScoped<IEventPageResponseService, EventPageResponseService>();
+builder.Services.AddScoped<IPublicEventPageService, PublicEventPageService>();
 builder.Services.AddScoped<IContactInfoRepository, ContactInfoRepository>();
 builder.Services.AddScoped<IContactInfoService, ContactInfoService>();
 builder.Services.AddScoped<IHeroSlideRepository, HeroSlideRepository>();
@@ -314,6 +328,11 @@ app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(activityUploadDirectory),
     RequestPath = ActivityImageStorage.RequestPath
+});
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(eventPageUploadDirectory),
+    RequestPath = EventPageImageStorage.RequestPath
 });
 app.UseStaticFiles(new StaticFileOptions
 {

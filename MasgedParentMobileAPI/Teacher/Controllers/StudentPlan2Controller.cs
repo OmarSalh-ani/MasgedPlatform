@@ -196,6 +196,26 @@ public class StudentPlan2Controller(AppDbContext db, IWorkDayService workDayServ
         return this.ToActionResult(GlobalResponse.Ok(response, statusMessage));
     }
 
+    [HttpPost("expand-rows")]
+    public async Task<IActionResult> ExpandPlanRows(
+        [FromBody] ExpandPlanRowsRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetTeacherContext(out _, out _))
+            return this.ToActionResult(GlobalResponse.Unauthorized());
+
+        try
+        {
+            var preview = await StudentPlan2Helper.ExpandPlanRowsPreviewAsync(
+                db, request, cancellationToken);
+            return this.ToActionResult(GlobalResponse.Ok(preview));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return this.ToActionResult(GlobalResponse.BadRequest(ex.Message));
+        }
+    }
+
     [HttpGet("surahs/{surahId:int}/ayahs")]
     public async Task<IActionResult> GetAyahsBySurah(int surahId, CancellationToken cancellationToken)
     {

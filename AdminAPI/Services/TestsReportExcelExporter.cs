@@ -60,7 +60,9 @@ public static class TestsReportExcelExporter
             worksheet.Cells[dataRow, 9].Value = test.TestDate.ToString("dd/MM/yyyy", DisplayCulture);
             worksheet.Cells[dataRow, 10].Value = test.FinalResults;
             worksheet.Cells[dataRow, 11].Value = test.Notes;
-            worksheet.Cells[dataRow, 12].Value = test.TestName;
+            worksheet.Cells[dataRow, 12].Value = string.IsNullOrWhiteSpace(test.TestName)
+                ? TestRangeResolver.DefaultTestType
+                : test.TestName;
 
             using var rowRange = worksheet.Cells[dataRow, 1, dataRow, 12];
             rowRange.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;

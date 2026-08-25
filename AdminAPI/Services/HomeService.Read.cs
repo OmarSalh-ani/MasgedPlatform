@@ -43,20 +43,34 @@ public partial class HomeService
         int studentId,
         CancellationToken cancellationToken = default)
     {
-        return await db.TestHeads
+        var rows = await db.TestHeads
             .AsNoTracking()
             .Where(t => t.StudentId == studentId)
             .OrderByDescending(t => t.TestDate)
+            .Select(t => new
+            {
+                t.TestDate,
+                t.TestType,
+                t.TestFrom,
+                t.TestTo,
+                t.HezbNumber,
+                t.SurahName,
+                t.FinalResult,
+                t.Notes,
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows
             .Select(t => new HomeStudentTestDto
             {
                 TestName = t.TestDate.ToString("yyyy/MM/dd HH:mm"),
-                TestType = t.TestType ?? string.Empty,
-                From = t.TestFrom ?? string.Empty,
-                To = t.TestTo ?? string.Empty,
+                TestType = TestRangeResolver.ResolveTestType(null, t.TestType),
+                From = TestRangeResolver.ResolveFrom(t.TestFrom, t.HezbNumber, t.SurahName),
+                To = TestRangeResolver.ResolveTo(t.TestTo, t.HezbNumber, t.SurahName),
                 TestDegree = t.FinalResult.ToString("N0"),
                 Notes = t.Notes ?? string.Empty,
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 
     public async Task<List<HomeStudentReviewDto>> GetStudentReviewsAsync(

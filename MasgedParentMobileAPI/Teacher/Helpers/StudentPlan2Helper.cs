@@ -180,6 +180,198 @@ public static class StudentPlan2Helper
         return expanded;
     }
 
+    public static async Task<List<PlanRowInputDto>> ExpandSurahRangeAsync(
+        AppDbContext db,
+        SurahRangeSelectionDto range,
+        CancellationToken cancellationToken)
+    {
+        if (range.FromSurahId <= 0 || range.ToSurahId <= 0
+            || range.FromAyahNumber <= 0 || range.ToAyahNumber <= 0)
+            throw new InvalidOperationException("يرجى تحديد السور ونطاق الآيات بشكل صحيح");
+
+        var planType = string.IsNullOrWhiteSpace(range.PlanType) ? "حفظ" : range.PlanType.Trim();
+
+        var surahs = await db.QuranSurahs
+            .AsNoTracking()
+            .OrderBy(x => x.SortOrder ?? x.Id)
+            .ToListAsync(cancellationToken);
+
+        var fromSurah = surahs.FirstOrDefault(s => s.Id == range.FromSurahId);
+        var toSurah = surahs.FirstOrDefault(s => s.Id == range.ToSurahId);
+        if (fromSurah is null || toSurah is null)
+            throw new InvalidOperationException("السورة المحددة غير موجودة");
+
+        var ayahBounds = await GetAyahBoundsBySurahAsync(db, cancellationToken);
+        if (!ayahBounds.TryGetValue(range.FromSurahId, out var fromBounds)
+            || !ayahBounds.TryGetValue(range.ToSurahId, out var toBounds))
+            throw new InvalidOperationException("تعذر تحديد عدد آيات السورة");
+
+        var fromAyahStart = ClampAyah(range.FromAyahNumber, fromBounds.Min, fromBounds.Max);
+        var fromAyahEndRaw = range.FromAyahEnd > 0 ? range.FromAyahEnd : range.FromAyahNumber;
+        var fromAyahEnd = ClampAyah(fromAyahEndRaw, fromBounds.Min, fromBounds.Max);
+        if (fromAyahStart > fromAyahEnd)
+            throw new InvalidOperationException("نطاق آيات سورة البداية غير صحيح");
+
+        var toAyahStartRaw = range.ToAyahStart > 0 ? range.ToAyahStart : toBounds.Min;
+        var toAyahStart = ClampAyah(toAyahStartRaw, toBounds.Min, toBounds.Max);
+        var toAyahEnd = ClampAyah(range.ToAyahNumber, toBounds.Min, toBounds.Max);
+        if (toAyahStart > toAyahEnd)
+            throw new InvalidOperationException("نطاق آيات سورة النهاية غير صحيح");
+
+        var fromOrder = fromSurah.SortOrder ?? fromSurah.Id;
+        var toOrder = toSurah.SortOrder ?? toSurah.Id;
+        var minOrder = Math.Min(fromOrder, toOrder);
+        var maxOrder = Math.Max(fromOrder, toOrder);
+
+        var fromPosition = BuildAyahPosition(fromOrder, fromAyahStart);
+        var toPosition = BuildAyahPosition(toOrder, toAyahEnd);
+
+        if (!range.IsReversed && fromPosition > toPosition)
+            throw new InvalidOperationException("نقطة البداية يجب أن تسبق نقطة النهاية في ترتيب المصحف");
+
+        if (range.IsReversed && fromPosition < toPosition)
+            throw new InvalidOperationException("عند تفعيل الخطة عكس ترتيب القرآن، يجب أن تكون سورة البداية بعد سورة النهاية في المصحف");
+
+        var surahsInRange = surahs
+            .Where(s =>
+            {
+                var order = s.SortOrder ?? s.Id;
+                return order >= minOrder && order <= maxOrder;
+            })
+            .ToList();
+
+        if (range.IsReversed)
+            surahsInRange = surahsInRange.OrderByDescending(s => s.SortOrder ?? s.Id).ToList();
+        else
+            surahsInRange = surahsInRange.OrderBy(s => s.SortOrder ?? s.Id).ToList();
+
+        var result = new List<PlanRowInputDto>();
+        foreach (var surah in surahsInRange)
+        {
+            if (!ayahBounds.TryGetValue(surah.Id, out var bounds))
+                continue;
+
+            var (segFrom, segTo) = ResolveSegmentAyahs(
+                surah.Id,
+                bounds.Min,
+                bounds.Max,
+                range.FromSurahId,
+                fromAyahStart,
+                fromAyahEnd,
+                range.ToSurahId,
+                toAyahStart,
+                toAyahEnd);
+
+            if (segFrom > segTo)
+                continue;
+
+            result.Add(new PlanRowInputDto
+            {
+                SurahId = surah.Id,
+                FromAyahNumber = segFrom,
+                ToAyahNumber = segTo,
+                PlanType = planType
+            });
+        }
+
+        if (result.Count == 0)
+            throw new InvalidOperationException("لم يتم إنشاء أي سطر من النطاق المحدد");
+
+        return result;
+    }
+
+    public static async Task<List<ExpandedPlanRowPreviewDto>> ExpandPlanRowsPreviewAsync(
+        AppDbContext db,
+        ExpandPlanRowsRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var rows = new List<PlanRowInputDto>(request.Rows);
+        if (request.Range is not null)
+        {
+            request.Range.PlanType = string.IsNullOrWhiteSpace(request.PlanType)
+                ? request.Range.PlanType
+                : request.PlanType;
+            if (string.IsNullOrWhiteSpace(request.Range.PlanType))
+                request.Range.PlanType = request.PlanType;
+
+            var rangeRows = await ExpandSurahRangeAsync(db, request.Range, cancellationToken);
+            rows.AddRange(rangeRows);
+        }
+
+        if (rows.Count == 0)
+            return [];
+
+        var expanded = await ExpandSurahRowsAsync(db, rows, cancellationToken);
+        var surahNames = await db.QuranSurahs
+            .AsNoTracking()
+            .Where(s => expanded.Select(r => r.SurahId).Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, s => s.NameAr, cancellationToken);
+
+        return expanded.Select(r => new ExpandedPlanRowPreviewDto
+        {
+            SurahId = r.SurahId,
+            SurahName = surahNames.GetValueOrDefault(r.SurahId, "—"),
+            FromAyahNumber = r.FromAyahNumber,
+            ToAyahNumber = r.ToAyahNumber,
+            PlanType = r.PlanType
+        }).ToList();
+    }
+
+    private static async Task<Dictionary<int, (int Min, int Max)>> GetAyahBoundsBySurahAsync(
+        AppDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var fromHoly = await db.HolyQurans
+            .AsNoTracking()
+            .GroupBy(h => h.sura_no)
+            .Select(g => new { SurahId = g.Key, Min = g.Min(x => x.aya_no), Max = g.Max(x => x.aya_no) })
+            .ToListAsync(cancellationToken);
+
+        if (fromHoly.Count > 0)
+            return fromHoly.ToDictionary(x => x.SurahId, x => (x.Min, x.Max));
+
+        var fromAyahs = await db.QuranAyahs
+            .AsNoTracking()
+            .GroupBy(a => a.SurahId)
+            .Select(g => new { SurahId = g.Key, Min = g.Min(x => x.AyahNumber), Max = g.Max(x => x.AyahNumber) })
+            .ToListAsync(cancellationToken);
+
+        return fromAyahs.ToDictionary(x => x.SurahId, x => (x.Min, x.Max));
+    }
+
+    private static long BuildAyahPosition(int surahOrder, int ayahNumber) =>
+        surahOrder * 1000L + ayahNumber;
+
+    private static int ClampAyah(int ayah, int min, int max) =>
+        Math.Min(max, Math.Max(min, ayah));
+
+    private static (int From, int To) ResolveSegmentAyahs(
+        int surahId,
+        int minAyah,
+        int maxAyah,
+        int fromSurahId,
+        int fromAyahStart,
+        int fromAyahEnd,
+        int toSurahId,
+        int toAyahStart,
+        int toAyahEnd)
+    {
+        if (surahId == fromSurahId && surahId == toSurahId)
+        {
+            var from = Math.Max(fromAyahStart, toAyahStart);
+            var to = Math.Min(fromAyahEnd, toAyahEnd);
+            return (from, to);
+        }
+
+        if (surahId == fromSurahId)
+            return (fromAyahStart, fromAyahEnd);
+
+        if (surahId == toSurahId)
+            return (toAyahStart, toAyahEnd);
+
+        return (minAyah, maxAyah);
+    }
+
     public static async Task<StudentPlan2DetailDto> BuildPlanDetailAsync(
         AppDbContext db,
         RegisterForm student,

@@ -252,6 +252,72 @@ class PlanRowInput {
       };
 }
 
+class SurahRangeSelection {
+  const SurahRangeSelection({
+    required this.fromSurahId,
+    required this.fromAyahNumber,
+    required this.fromAyahEnd,
+    required this.toSurahId,
+    required this.toAyahStart,
+    required this.toAyahNumber,
+    required this.isReversed,
+    required this.planType,
+  });
+
+  final int fromSurahId;
+  final int fromAyahNumber;
+  final int fromAyahEnd;
+  final int toSurahId;
+  final int toAyahStart;
+  final int toAyahNumber;
+  final bool isReversed;
+  final String planType;
+
+  Map<String, dynamic> toJson() => {
+        'fromSurahId': fromSurahId,
+        'fromAyahNumber': fromAyahNumber,
+        'fromAyahEnd': fromAyahEnd,
+        'toSurahId': toSurahId,
+        'toAyahStart': toAyahStart,
+        'toAyahNumber': toAyahNumber,
+        'isReversed': isReversed,
+        'planType': planType,
+      };
+}
+
+class ExpandedPlanRowPreview {
+  const ExpandedPlanRowPreview({
+    required this.surahId,
+    required this.surahName,
+    required this.fromAyahNumber,
+    required this.toAyahNumber,
+    required this.planType,
+  });
+
+  final int surahId;
+  final String surahName;
+  final int fromAyahNumber;
+  final int toAyahNumber;
+  final String planType;
+
+  PlanRowInput toInput() => PlanRowInput(
+        surahId: surahId,
+        fromAyahNumber: fromAyahNumber,
+        toAyahNumber: toAyahNumber,
+        planType: planType,
+      );
+
+  factory ExpandedPlanRowPreview.fromJson(Map<String, dynamic> json) {
+    return ExpandedPlanRowPreview(
+      surahId: json['surahId'] as int,
+      surahName: json['surahName'] as String? ?? '',
+      fromAyahNumber: json['fromAyahNumber'] as int,
+      toAyahNumber: json['toAyahNumber'] as int,
+      planType: json['planType'] as String? ?? 'حفظ',
+    );
+  }
+}
+
 class BulkAssignPlanRequest {
   const BulkAssignPlanRequest({
     required this.studentIds,

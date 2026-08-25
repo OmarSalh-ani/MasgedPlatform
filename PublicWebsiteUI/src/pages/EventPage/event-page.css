@@ -1,0 +1,238 @@
+.event-page {
+  padding-block: clamp(2rem, 5vw, 3.5rem) clamp(3rem, 7vw, 5rem);
+  background:
+    radial-gradient(ellipse 90% 60% at 100% 0%, rgba(96, 165, 250, 0.16), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 0% 100%, rgba(37, 99, 235, 0.08), transparent 50%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+}
+
+.event-page__layout {
+  display: grid;
+  gap: 1.75rem;
+}
+
+.event-hero,
+.event-info,
+.event-tracks,
+.event-form,
+.event-success,
+.event-closed,
+.event-missing {
+  background: var(--card, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.event-hero {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .event-hero--with-media {
+    grid-template-columns: minmax(220px, 340px) minmax(0, 1fr);
+    align-items: center;
+  }
+}
+
+.event-hero__media img {
+  width: 100%;
+  border-radius: 22px;
+  object-fit: cover;
+  max-height: 320px;
+}
+
+.event-hero__invite,
+.event-hero__subject {
+  white-space: pre-line;
+  line-height: 1.9;
+  color: var(--text-muted);
+}
+
+.event-hero__kicker {
+  color: var(--primary, #2563eb);
+  font-weight: 700;
+  margin: 0.35rem 0;
+}
+
+.event-hero__title {
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 0 0 0.75rem;
+}
+
+.event-hero__mosque {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+
+.event-info__grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .event-info__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.event-info-card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1rem 1.1rem;
+  background: var(--bg-alt, #f8fafc);
+}
+
+.event-info-card h3,
+.event-tracks h2,
+.event-form h2,
+.event-supervisors h3 {
+  margin: 0 0 0.6rem;
+  color: var(--primary, #2563eb);
+}
+
+.event-info-card p,
+.event-track-card p,
+.event-notes {
+  margin: 0;
+  line-height: 1.85;
+  white-space: pre-line;
+}
+
+.event-info-card__icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary, #2563eb);
+  margin-bottom: 0.65rem;
+}
+
+.event-notes,
+.event-supervisors {
+  margin-top: 1.25rem;
+}
+
+.event-supervisors ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.event-tracks__grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 800px) {
+  .event-tracks__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.event-track-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1.15rem 1.15rem 1.15rem 1.35rem;
+  background: linear-gradient(180deg, #fff, var(--bg-alt, #f8fafc));
+}
+
+.event-track-card__num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  font-weight: 800;
+  margin-bottom: 0.65rem;
+}
+
+.event-field {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1.1rem;
+}
+
+.event-field label {
+  font-weight: 700;
+}
+
+.event-field input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius, 12px);
+  background: var(--bg);
+}
+
+.event-field input:focus {
+  outline: none;
+  border-color: var(--primary-light, #60a5fa);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.event-field__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.event-chip {
+  border: 1.5px solid var(--border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.7rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.event-chip.is-active {
+  background: var(--primary, #2563eb);
+  border-color: var(--primary, #2563eb);
+  color: #fff;
+}
+
+.event-field--invalid input,
+.event-field--invalid .event-chip {
+  border-color: #dc3545;
+}
+
+.event-field__error,
+.event-form__error {
+  color: #dc3545;
+  font-size: 0.9rem;
+}
+
+.event-form__submit {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.event-success,
+.event-closed,
+.event-missing {
+  text-align: center;
+}
+
+.event-success i,
+.event-closed i,
+.event-missing i {
+  font-size: 2.2rem;
+  color: var(--primary, #2563eb);
+  margin-bottom: 0.75rem;
+}

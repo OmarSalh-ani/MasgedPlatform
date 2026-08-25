@@ -156,4 +156,29 @@ class StudentPlanApi {
           BulkAssignPlanResponse.fromJson(json as Map<String, dynamic>),
     );
   }
+
+  Future<List<ExpandedPlanRowPreview>> expandRows({
+    String planType = 'حفظ',
+    SurahRangeSelection? range,
+    List<PlanRowInput> rows = const [],
+  }) {
+    return _client.post<List<ExpandedPlanRowPreview>>(
+      '/api/studentplan2/expand-rows',
+      body: {
+        'planType': planType,
+        if (range != null) 'range': range.toJson(),
+        'rows': rows.map((r) => r.toJson()).toList(),
+      },
+      parseData: (json) {
+        final list = json as List<dynamic>;
+        return list
+            .map(
+              (e) => ExpandedPlanRowPreview.fromJson(
+                e as Map<String, dynamic>,
+              ),
+            )
+            .toList();
+      },
+    );
+  }
 }

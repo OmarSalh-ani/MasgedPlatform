@@ -57,8 +57,8 @@ public class StudentTestsController(AppDbContext db) : ControllerBase
                 TestName = t.TestDate.ToString("yyyy/MM/dd HH:mm"),
                 SurahName = t.SurahName ?? "",
                 HezbNumber = t.HezbNumber ?? "",
-                From = t.TestFrom ?? "",
-                To = t.TestTo ?? "",
+                From = TestRangeResolver.ResolveFrom(t.TestFrom, t.HezbNumber, t.SurahName),
+                To = TestRangeResolver.ResolveTo(t.TestTo, t.HezbNumber, t.SurahName),
                 TestDegree = t.FinalResult.ToString("N0", CultureInfo.InvariantCulture),
                 Notes = t.Notes,
                 CircleId = t.CircleId,
@@ -125,8 +125,10 @@ public class StudentTestsController(AppDbContext db) : ControllerBase
             FinalResult = testHead.FinalResult.ToString("N0", CultureInfo.InvariantCulture),
             SurahName = testHead.SurahName ?? "",
             HezbNumber = testHead.HezbNumber ?? "",
-            FromSurah = testHead.TestFrom ?? "",
-            ToSurah = testHead.TestTo ?? "",
+            FromSurah = TestRangeResolver.ResolveFrom(
+                testHead.TestFrom, testHead.HezbNumber, testHead.SurahName),
+            ToSurah = TestRangeResolver.ResolveTo(
+                testHead.TestTo, testHead.HezbNumber, testHead.SurahName),
             Notes = testHead.Notes,
             MemorizationScore = testHead.MemorizationScore,
             TajweedScore = testHead.TajweedScore,
@@ -154,23 +156,35 @@ public class StudentTestsController(AppDbContext db) : ControllerBase
         if (student is null)
             return this.ToActionResult(GlobalResponse.NotFound("الطالب غير موجود"));
 
+        var validRows = StudentTestsHelper.GetValidRows(request.TestRows);
+        var firstRow = validRows.FirstOrDefault();
+        var surahName = firstRow?.SurahName ?? request.SurahName ?? "";
+        var hezbNumber = firstRow?.HezbNumber ?? request.HezbNumber ?? "";
+        var (testFrom, testTo) = TestRangeResolver.Resolve(
+            firstRow?.FromSurah,
+            firstRow?.ToSurah,
+            hezbNumber,
+            surahName);
         var testDate = request.TestDate ?? KuwaitTime.Now;
         var totalScore = (decimal?)request.TotalScore;
         var grade = !string.IsNullOrWhiteSpace(request.Grade)
             ? request.Grade.Trim()
             : StudentTestsHelper.CalculateGrade(totalScore);
+        var finalResult = validRows.Count > 0
+            ? StudentTestsHelper.ComputeFinalResultFromRows(validRows)
+            : totalScore ?? 0;
 
         var testHead = new TestHead
         {
             StudentId = studentId,
             CircleId = circleId,
             TeacherId = teacherId,
-            SurahName = request.SurahName ?? "",
-            HezbNumber = request.HezbNumber ?? "",
-            TestFrom = "",
-            TestTo = "",
+            SurahName = surahName,
+            HezbNumber = hezbNumber,
+            TestFrom = testFrom,
+            TestTo = testTo,
             TestDate = testDate,
-            FinalResult = totalScore ?? 0,
+            FinalResult = finalResult,
             MemorizationScore = request.MemorizationScore,
             TajweedScore = request.TajweedScore,
             RevisionScore = request.RevisionScore,
@@ -183,11 +197,31 @@ public class StudentTestsController(AppDbContext db) : ControllerBase
         db.TestHeads.Add(testHead);
         await db.SaveChangesAsync(cancellationToken);
 
+        foreach (var row in validRows)
+        {
+            if (!int.TryParse(row.Degree, out var degree))
+                continue;
+
+            db.TestBodies.Add(new TestBody
+            {
+                TestHeadId = testHead.Id,
+                QuestionName = row.Question,
+                QuestionOrder = row.RowNumber,
+                TestDegree = degree,
+                CreatedAt = KuwaitTime.Now
+            });
+        }
+
+        if (validRows.Count > 0)
+            await db.SaveChangesAsync(cancellationToken);
+
         await QueueTestWhatsAppAsync(student, testHead, cancellationToken);
 
         return this.ToActionResult(GlobalResponse.Ok(
-            new { testId = testHead.Id },
-            "تم حفظ الاختبار بنجاح"));
+            new { testId = testHead.Id, questionCount = validRows.Count },
+            validRows.Count > 0
+                ? $"تم حفظ الاختبار بنجاح مع {validRows.Count} سؤال"
+                : "تم حفظ الاختبار بنجاح"));
     }
 
     [HttpPut("{testId:int}")]
@@ -228,8 +262,11 @@ public class StudentTestsController(AppDbContext db) : ControllerBase
 
         testHead.SurahName = firstRow?.SurahName ?? request.SurahName ?? "";
         testHead.HezbNumber = firstRow?.HezbNumber ?? request.HezbNumber ?? "";
-        testHead.TestFrom = firstRow?.FromSurah ?? "";
-        testHead.TestTo = firstRow?.ToSurah ?? "";
+        (testHead.TestFrom, testHead.TestTo) = TestRangeResolver.Resolve(
+            firstRow?.FromSurah,
+            firstRow?.ToSurah,
+            testHead.HezbNumber,
+            testHead.SurahName);
         testHead.TestDate = testDate;
         testHead.FinalResult = StudentTestsHelper.ComputeFinalResultFromRows(validRows);
         testHead.MemorizationScore = request.MemorizationScore;

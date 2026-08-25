@@ -4,6 +4,9 @@ import { AdminLayout } from '@/layouts/AdminLayout'
 import { AboutEditPage } from '@/pages/about/AboutEditPage'
 import { ActivitiesPage } from '@/pages/activities/ActivitiesPage'
 import { ActivityFormPage } from '@/pages/activities/ActivityFormPage'
+import { EventPageFormPage } from '@/pages/event-pages/EventPageFormPage'
+import { EventPagesPage } from '@/pages/event-pages/EventPagesPage'
+import { EventPageResponsesPage } from '@/pages/event-page-responses/EventPageResponsesPage'
 import { TipFormPage } from '@/pages/tips/TipFormPage'
 import { TipsPage } from '@/pages/tips/TipsPage'
 import { ContactInfoFormPage } from '@/pages/contact-info/ContactInfoFormPage'
@@ -83,6 +86,10 @@ export const router = createBrowserRouter([
           { path: 'activities', element: <ActivitiesPage /> },
           { path: 'activities/new', element: <ActivityFormPage /> },
           { path: 'activities/:id/edit', element: <ActivityFormPage /> },
+          { path: 'event-pages', element: <EventPagesPage /> },
+          { path: 'event-pages/new', element: <EventPageFormPage /> },
+          { path: 'event-pages/:id/edit', element: <EventPageFormPage /> },
+          { path: 'event-page-responses', element: <EventPageResponsesPage /> },
           { path: 'tips', element: <TipsPage /> },
           { path: 'tips/new', element: <TipFormPage /> },
           { path: 'tips/:id/edit', element: <TipFormPage /> },

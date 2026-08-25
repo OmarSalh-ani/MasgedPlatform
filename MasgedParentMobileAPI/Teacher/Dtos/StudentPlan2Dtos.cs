@@ -132,6 +132,38 @@ public class BulkAssignPlanStudentResultDto
     public string? Message { get; set; }
 }
 
+public class ExpandPlanRowsRequestDto
+{
+    public string PlanType { get; set; } = "حفظ";
+    public SurahRangeSelectionDto? Range { get; set; }
+    public List<PlanRowInputDto> Rows { get; set; } = [];
+}
+
+public class SurahRangeSelectionDto
+{
+    public int FromSurahId { get; set; }
+    /// <summary>First ayah on the from surah.</summary>
+    public int FromAyahNumber { get; set; }
+    /// <summary>Last ayah on the from surah. If 0, equals <see cref="FromAyahNumber"/>.</summary>
+    public int FromAyahEnd { get; set; }
+    public int ToSurahId { get; set; }
+    /// <summary>First ayah on the to surah. If 0, uses 1.</summary>
+    public int ToAyahStart { get; set; }
+    /// <summary>Last ayah on the to surah.</summary>
+    public int ToAyahNumber { get; set; }
+    public bool IsReversed { get; set; }
+    public string PlanType { get; set; } = "حفظ";
+}
+
+public class ExpandedPlanRowPreviewDto
+{
+    public int SurahId { get; set; }
+    public string SurahName { get; set; } = string.Empty;
+    public int FromAyahNumber { get; set; }
+    public int ToAyahNumber { get; set; }
+    public string PlanType { get; set; } = string.Empty;
+}
+
 public class PlanRowInputDto
 {
     public int SurahId { get; set; }
