@@ -81,7 +81,7 @@ class ApiClient {
       );
       final text = response.data;
       if (text == null || text.trim().isEmpty) {
-        throw ApiException(message: 'استجابة فارغة من الخادم');
+        throw ApiException('استجابة فارغة من الخادم');
       }
       return text;
     } on DioException catch (e) {
