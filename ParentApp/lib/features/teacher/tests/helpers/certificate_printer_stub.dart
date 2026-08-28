@@ -1,16 +1,20 @@
-import 'dart:io';
+import 'dart:convert';
+import 'dart:ui';
 
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:masged_parent_app/core/platform/export_report_file.dart';
 
-Future<void> openCertificateForPrint(String html, {String? title}) async {
-  final dir = await getTemporaryDirectory();
-  final file = File('${dir.path}/test_certificate.html');
-  await file.writeAsString(html, flush: true);
-
-  await Share.shareXFiles(
-    [XFile(file.path)],
+Future<String> openCertificateForPrint(
+  String html, {
+  String? title,
+  Rect? sharePositionOrigin,
+}) async {
+  final result = await exportReportFileWithFallback(
+    bytes: utf8.encode(html),
+    fileName: 'test_certificate.html',
+    mimeType: 'text/html;charset=utf-8',
     subject: title ?? 'شهادة اختبار',
-    text: 'شهادة اختبار الطالب',
+    text: title ?? 'شهادة اختبار الطالب',
+    sharePositionOrigin: sharePositionOrigin,
   );
+  return result.successMessage;
 }

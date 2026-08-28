@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:masged_parent_app/core/theme/app_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/router/app_routes.dart';
 import '../../../shared/widgets/student_avatar.dart';
 import '../models/child_model.dart';
 import '../providers/student_profile_provider.dart';
@@ -121,6 +123,8 @@ class ChildProfileScreen extends ConsumerWidget {
         child: Column(
           children: [
             _buildProfileHeader(profile),
+            const SizedBox(height: 24),
+            _buildCertificatesShortcut(context, profile),
             const SizedBox(height: 32),
             _buildSectionTitle('جدول الخطة', Icons.table_chart_rounded),
             const SizedBox(height: 12),
@@ -161,6 +165,50 @@ class ChildProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 40),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCertificatesShortcut(BuildContext context, ChildModel profile) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => context.push(
+          AppRoutes.testCertificatesPath(
+            studentId: int.tryParse(profile.id),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.workspace_premium_rounded,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'شهادات الاختبار',
+                  style: AppFonts.cairo(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
+            ],
+          ),
         ),
       ),
     );

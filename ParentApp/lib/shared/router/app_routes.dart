@@ -30,6 +30,7 @@ class AppRoutes {
   static const adhkar = '/adhkar';
   static const adhkarGroup = '/adhkar/group/:groupId';
   static const adhkarCategory = '/adhkar/category/:categoryId';
+  static const testCertificates = '/test-certificates';
 
   // Helpers to build concrete paths with params
   static String otpPath(String phone) => '/otp/$phone';
@@ -45,6 +46,13 @@ class AppRoutes {
   static String adhkarGroupPath(String groupId) => '/adhkar/group/$groupId';
   static String adhkarCategoryPath(int categoryId, {required String session}) =>
       '/adhkar/category/$categoryId?session=${Uri.encodeComponent(session)}';
+  static String testCertificatesPath({int? studentId, int? testId}) {
+    final query = <String, String>{};
+    if (studentId != null) query['studentId'] = '$studentId';
+    if (testId != null) query['testId'] = '$testId';
+    if (query.isEmpty) return testCertificates;
+    return '$testCertificates?${Uri(queryParameters: query).query}';
+  }
 
   /// Routes that work without an internet connection.
   static const offlineAllowedPaths = [

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 
 import '../../../core/theme/app_colors.dart';
+import '../../test_certificates/utils/test_certificate_notification_launcher.dart';
 import '../../video_call/utils/parent_video_call_launcher.dart';
 import '../models/parent_notification_item.dart';
 import '../providers/parent_notifications_provider.dart';
@@ -80,9 +81,14 @@ class _NotificationTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final icon = item.kind == 'meet' ? Icons.videocam_rounded : Icons.newspaper;
+    final icon = switch (item.kind) {
+      'meet' => Icons.videocam_rounded,
+      'test_certificate' => Icons.workspace_premium_rounded,
+      _ => Icons.newspaper,
+    };
     final isJoinableMeet = item.kind == 'meet' && item.canJoin;
     final isEndedMeet = item.isEndedMeeting;
+    final isTestCertificate = item.kind == 'test_certificate';
 
     return Material(
       color: isEndedMeet ? AppColors.inputFill : Colors.white,
@@ -95,7 +101,12 @@ class _NotificationTile extends ConsumerWidget {
                   item.id,
                   startDateTime: item.createdAt,
                 )
-            : null,
+            : isTestCertificate
+                ? () => openTestCertificateFromPushNotification(
+                      ref,
+                      testId: item.id,
+                    )
+                : null,
         child: Opacity(
           opacity: isEndedMeet ? 0.75 : 1,
           child: Padding(

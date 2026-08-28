@@ -48,6 +48,11 @@ typedef ChatPushHandler = void Function(ChatPushTarget target);
 
 typedef AdhkarPushHandler = void Function(String groupId);
 
+typedef TestCertificatePushHandler = void Function({
+  required int testId,
+  int? studentId,
+});
+
 
 
 @pragma('vm:entry-point')
@@ -92,6 +97,8 @@ class PushNotificationService {
 
   AdhkarPushHandler? _onAdhkarOpened;
 
+  TestCertificatePushHandler? _onTestCertificateOpened;
+
   WidgetRef? _ref;
 
 
@@ -107,6 +114,10 @@ class PushNotificationService {
   static const _adhkarChannelId = 'adhkar_reminders';
 
   static const _adhkarChannelName = 'تذكير الأذكار';
+
+  static const _certificatesChannelId = 'masged_certificates';
+
+  static const _certificatesChannelName = 'شهادات الاختبار';
 
   static const _androidNotificationColor = Color(0xFF4A9B8F);
 
@@ -124,6 +135,8 @@ class PushNotificationService {
 
     AdhkarPushHandler? onAdhkarOpened,
 
+    TestCertificatePushHandler? onTestCertificateOpened,
+
   }) async {
 
     if (_initialized) return;
@@ -135,6 +148,8 @@ class PushNotificationService {
     _onChatOpened = onChatOpened;
 
     _onAdhkarOpened = onAdhkarOpened;
+
+    _onTestCertificateOpened = onTestCertificateOpened;
 
 
 
@@ -400,6 +415,12 @@ class PushNotificationService {
 
           _openAdhkar(payload.substring(7));
 
+        } else if (payload.startsWith('test_certificate:')) {
+
+          final testId = int.tryParse(payload.substring(17));
+
+          if (testId != null) _openTestCertificate(testId: testId);
+
         }
 
       },
@@ -486,6 +507,30 @@ class PushNotificationService {
 
       );
 
+      await plugin?.createNotificationChannel(
+
+        AndroidNotificationChannel(
+
+          _certificatesChannelId,
+
+          _certificatesChannelName,
+
+          description: 'إشعارات شهادات الاختبار',
+
+          importance: Importance.high,
+
+          enableLights: true,
+
+          ledColor: _androidNotificationColor,
+
+          enableVibration: true,
+
+          playSound: true,
+
+        ),
+
+      );
+
     }
 
   }
@@ -508,6 +553,8 @@ class PushNotificationService {
 
     final isChat = kind == 'chat';
 
+    final isTestCertificate = kind == 'test_certificate';
+
     final meetingId = isMeeting
 
         ? int.tryParse(data['meetingId']?.toString() ?? '')
@@ -515,6 +562,18 @@ class PushNotificationService {
         : null;
 
     final chatTarget = isChat ? _parseChatData(data) : null;
+
+    final testId = isTestCertificate
+
+        ? int.tryParse(data['testId']?.toString() ?? '')
+
+        : null;
+
+    final certificateStudentId = isTestCertificate
+
+        ? int.tryParse(data['studentId']?.toString() ?? '')
+
+        : null;
 
     if (isChat && chatTarget != null) {
       if (ActiveChatConversationTracker.isActive(
@@ -549,6 +608,12 @@ class PushNotificationService {
 
       parentPhone: chatTarget?.parentPhone,
 
+      isTestCertificate: isTestCertificate,
+
+      testId: testId,
+
+      certificateStudentId: certificateStudentId,
+
     );
 
   }
@@ -576,6 +641,22 @@ class PushNotificationService {
       final target = _parseChatData(data);
 
       if (target != null) _openChat(target);
+
+      return;
+
+    }
+
+    if (kind == 'test_certificate') {
+
+      final testId = int.tryParse(data['testId']?.toString() ?? '');
+
+      final studentId = int.tryParse(data['studentId']?.toString() ?? '');
+
+      if (testId != null) {
+
+        _openTestCertificate(testId: testId, studentId: studentId);
+
+      }
 
     }
 
@@ -650,6 +731,14 @@ class PushNotificationService {
     if (groupId.isEmpty) return;
 
     _onAdhkarOpened?.call(groupId);
+
+  }
+
+
+
+  void _openTestCertificate({required int testId, int? studentId}) {
+
+    _onTestCertificateOpened?.call(testId: testId, studentId: studentId);
 
   }
 

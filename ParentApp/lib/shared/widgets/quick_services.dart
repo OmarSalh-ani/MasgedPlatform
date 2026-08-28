@@ -90,6 +90,11 @@ class QuickServiceItem {
   static List<QuickServiceItem> servicesTabGridItems() {
     return _platformFiltered(const [
       QuickServiceItem(
+        label: 'شهادات الاختبار',
+        icon: Icons.workspace_premium_rounded,
+        route: AppRoutes.testCertificates,
+      ),
+      QuickServiceItem(
         label: 'التسبيح',
         icon: Icons.vibration_rounded,
         route: AppRoutes.zikerStats,

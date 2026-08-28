@@ -1,5 +1,6 @@
 export interface TestCertificate {
   testId: number
+  studentId: number
   studentName: string
   circleName: string
   teacherName: string
@@ -14,4 +15,17 @@ export interface TestCertificate {
 export interface TestCertificateScores {
   total: number
   grade: string
+}
+
+export interface SendTestCertificateNotificationPayload {
+  title: string
+  body: string
+}
+
+export interface SendTestCertificateNotificationResult {
+  recipientsResolved: number
+  recipientsWithoutTokens: number
+  tokensAttempted: number
+  successCount: number
+  failureCount: number
 }

@@ -25,10 +25,11 @@ public sealed partial class AdminPushNotificationService
         string title,
         string body,
         DeviceTokenKind tokenKind,
-        CancellationToken cancellationToken)
+        string context,
+        IReadOnlyDictionary<string, string>? data = null,
+        string androidChannelId = "masged_admin",
+        CancellationToken cancellationToken = default)
     {
-        const string context = "admin broadcast";
-
         if (!_firebaseSettings.Enabled)
         {
             await PersistSkipAsync(context, tokenKind, "PushDisabled",
@@ -50,12 +51,14 @@ public sealed partial class AdminPushNotificationService
             return (0, 0);
         }
 
-        var data = new Dictionary<string, string>
-        {
-            ["kind"] = "admin",
-            ["title"] = title,
-            ["body"] = body,
-        };
+        var payload = data is null
+            ? new Dictionary<string, string>
+            {
+                ["kind"] = "admin",
+                ["title"] = title,
+                ["body"] = body,
+            }
+            : new Dictionary<string, string>(data);
 
         var successCount = 0;
         var failureCount = 0;
@@ -68,13 +71,13 @@ public sealed partial class AdminPushNotificationService
                 {
                     Tokens = batch.ToList(),
                     Notification = new Notification { Title = title, Body = body },
-                    Data = data,
+                    Data = payload,
                     Android = new AndroidConfig
                     {
                         Priority = Priority.High,
                         Notification = new AndroidNotification
                         {
-                            ChannelId = "masged_admin",
+                            ChannelId = androidChannelId,
                             ClickAction = "FLUTTER_NOTIFICATION_CLICK",
                             Color = "#4A9B8F",
                             Icon = "ic_notification",

@@ -49,6 +49,7 @@ public partial class HomeService
             .OrderByDescending(t => t.TestDate)
             .Select(t => new
             {
+                t.Id,
                 t.TestDate,
                 t.TestType,
                 t.TestFrom,
@@ -63,6 +64,7 @@ public partial class HomeService
         return rows
             .Select(t => new HomeStudentTestDto
             {
+                TestId = t.Id,
                 TestName = t.TestDate.ToString("yyyy/MM/dd HH:mm"),
                 TestType = TestRangeResolver.ResolveTestType(null, t.TestType),
                 From = TestRangeResolver.ResolveFrom(t.TestFrom, t.HezbNumber, t.SurahName),

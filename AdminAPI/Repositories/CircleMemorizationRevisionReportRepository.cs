@@ -67,7 +67,9 @@ public class CircleMemorizationRevisionReportRepository(AdminDbContext db)
                 PlanDate = x.PlanDate,
                 CompletedDate = x.MemorizeDate,
                 SurahId = x.SurahId,
-                SurahName = x.QuranSurah.NameAr,
+                SurahName = x.MemorizationLevel.StartsWith("__manual__:")
+                    ? x.MemorizationLevel.Substring("__manual__:".Length)
+                    : x.QuranSurah.NameAr,
                 FromAyah = x.FromAyahNumber,
                 ToAyah = x.ToAyahNumber,
             })
@@ -93,7 +95,9 @@ public class CircleMemorizationRevisionReportRepository(AdminDbContext db)
                 PlanDate = x.PlanDate,
                 CompletedDate = x.ReviseDate,
                 SurahId = x.SurahId,
-                SurahName = x.QuranSurah.NameAr,
+                SurahName = x.MemorizationLevel.StartsWith("__manual__:")
+                    ? x.MemorizationLevel.Substring("__manual__:".Length)
+                    : x.QuranSurah.NameAr,
                 FromAyah = x.FromAyahNumber,
                 ToAyah = x.ToAyahNumber,
             })

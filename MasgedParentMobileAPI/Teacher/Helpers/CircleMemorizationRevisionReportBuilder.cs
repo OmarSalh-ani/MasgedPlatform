@@ -30,7 +30,7 @@ public static class CircleMemorizationRevisionReportBuilder
                 g => g.Key,
                 g => g.Select(x => new Segment(
                     x.SurahId,
-                    x.QuranSurah?.NameAr ?? "—",
+                    ResolveSurahName(x),
                     x.FromAyahNumber,
                     x.ToAyahNumber)).ToList());
 
@@ -40,7 +40,7 @@ public static class CircleMemorizationRevisionReportBuilder
                 g => g.Key,
                 g => g.Select(x => new Segment(
                     x.SurahId,
-                    x.QuranSurah?.NameAr ?? "—",
+                    ResolveSurahName(x),
                     x.FromAyahNumber,
                     x.ToAyahNumber)).ToList());
 
@@ -245,4 +245,14 @@ public static class CircleMemorizationRevisionReportBuilder
 
     private static string FormatJuzHizbLabel(string unitType, int number) =>
         $"{unitType.Trim()} {number}";
+
+    private static string ResolveSurahName(StudentPlanMemorizing row) =>
+        ManualPlanRowHelper.IsManual(row.MemorizationLevel)
+            ? ManualPlanRowHelper.ExtractName(row.MemorizationLevel)
+            : row.QuranSurah?.NameAr ?? "—";
+
+    private static string ResolveSurahName(StudentPlanRevise row) =>
+        ManualPlanRowHelper.IsManual(row.MemorizationLevel)
+            ? ManualPlanRowHelper.ExtractName(row.MemorizationLevel)
+            : row.QuranSurah?.NameAr ?? "—";
 }

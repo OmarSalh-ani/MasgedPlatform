@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { DialogShell } from '@/pages/home/dialogs/HomeWhatsappDialog'
 import { useHomeStudentTests } from '@/hooks/useHome'
 
@@ -28,17 +29,28 @@ export function StudentTestsDialog({ open, studentId, studentName, onOpenChange 
                 <th className="px-3 py-2">إلى</th>
                 <th className="px-3 py-2">الدرجة</th>
                 <th className="px-3 py-2">ملاحظات</th>
+                <th className="px-3 py-2">الشهادة</th>
               </tr>
             </thead>
             <tbody>
-              {(testsQuery.data ?? []).map((test, index) => (
-                <tr key={`${test.testName}-${index}`} className="border-t">
+              {(testsQuery.data ?? []).map((test) => (
+                <tr key={test.testId} className="border-t">
                   <td className="px-3 py-2 text-center">{test.testName}</td>
                   <td className="px-3 py-2 text-center">{test.testType}</td>
                   <td className="px-3 py-2 text-center">{test.from}</td>
                   <td className="px-3 py-2 text-center">{test.to}</td>
                   <td className="px-3 py-2 text-center">{test.testDegree}</td>
                   <td className="px-3 py-2 text-center">{test.notes}</td>
+                  <td className="px-3 py-2 text-center">
+                    <Link
+                      to={`/test-certificate?TestId=${test.testId}`}
+                      className="text-[#7C8738] underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      عرض الشهادة
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -13,10 +13,12 @@ class ForegroundPushBanner extends ConsumerStatefulWidget {
     super.key,
     this.onMeetingTap,
     this.onChatTap,
+    this.onTestCertificateTap,
   });
 
   final void Function(int meetingId)? onMeetingTap;
   final void Function(ChatPushTarget target)? onChatTap;
+  final void Function({required int testId, int? studentId})? onTestCertificateTap;
 
   @override
   ConsumerState<ForegroundPushBanner> createState() =>
@@ -83,6 +85,14 @@ class _ForegroundPushBannerState extends ConsumerState<ForegroundPushBanner>
           ),
         );
       }
+    } else if (message.isTestCertificate) {
+      final testId = message.testId;
+      if (testId != null) {
+        widget.onTestCertificateTap?.call(
+          testId: testId,
+          studentId: message.certificateStudentId,
+        );
+      }
     }
     _dismiss();
   }
@@ -110,6 +120,7 @@ class _ForegroundPushBannerState extends ConsumerState<ForegroundPushBanner>
     final topPadding = MediaQuery.paddingOf(context).top;
     final isMeeting = message.isMeeting;
     final isChat = message.isChat;
+    final isTestCertificate = message.isTestCertificate;
 
     return Positioned(
       top: 0,
@@ -126,7 +137,7 @@ class _ForegroundPushBannerState extends ConsumerState<ForegroundPushBanner>
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isMeeting || isChat
+                  color: isMeeting || isChat || isTestCertificate
                       ? AppColors.primary.withValues(alpha: 0.35)
                       : AppColors.border,
                 ),

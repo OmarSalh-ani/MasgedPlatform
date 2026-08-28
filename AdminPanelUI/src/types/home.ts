@@ -81,6 +81,7 @@ export interface HomeRegistrationSettings {
 }
 
 export interface HomeStudentTest {
+  testId: number
   testName: string
   testType: string
   from: string

@@ -26,6 +26,12 @@ class ForegroundPushMessage {
 
     this.parentPhone,
 
+    this.isTestCertificate = false,
+
+    this.testId,
+
+    this.certificateStudentId,
+
   });
 
 
@@ -49,6 +55,12 @@ class ForegroundPushMessage {
   final String? studentName;
 
   final String? parentPhone;
+
+  final bool isTestCertificate;
+
+  final int? testId;
+
+  final int? certificateStudentId;
 
 }
 

@@ -23,3 +23,13 @@ export function calculateTotalAndGrade(
 
   return { total: roundedTotal, grade }
 }
+
+export function buildTestCertificateNotificationDefaults(
+  studentName: string,
+  grade: string,
+): { title: string; body: string } {
+  return {
+    title: `شهادة اختبار — ${studentName}`,
+    body: `تم إصدار شهادة اختبار لـ ${studentName}. التقدير: ${grade}. اضغط لعرض الشهادة.`,
+  }
+}

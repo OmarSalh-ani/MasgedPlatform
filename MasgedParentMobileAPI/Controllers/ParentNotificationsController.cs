@@ -95,6 +95,45 @@ public sealed class NotificationsController : ControllerBase
             }
         }
 
+        if (studentIds.Count > 0)
+        {
+            var tests = await _db.TestHeads
+                .AsNoTracking()
+                .Where(t => studentIds.Contains(t.StudentId))
+                .Where(t => t.CreatedAt >= cutoff)
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(20)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.StudentId,
+                    t.CreatedAt,
+                    t.TestDate,
+                    StudentName = t.Student!.StudentName,
+                    t.MemorizationScore,
+                    t.TajweedScore,
+                    t.RevisionScore,
+                })
+                .ToListAsync(cancellationToken);
+
+            foreach (var test in tests)
+            {
+                var total = (test.MemorizationScore ?? 60m)
+                    + (test.TajweedScore ?? 30m)
+                    + (test.RevisionScore ?? 10m);
+                var grade = MasgedTeacherMobileAPI.Helpers.TestCertificateHelper.CalculateGrade(total);
+                list.Add(new ParentNotificationDto
+                {
+                    Kind = "test_certificate",
+                    Id = test.Id,
+                    Title = $"شهادة اختبار — {test.StudentName ?? "الطالب"}",
+                    Summary = $"التقدير: {grade} — اضغط لعرض الشهادة",
+                    CreatedAt = test.CreatedAt == default ? test.TestDate : test.CreatedAt,
+                    CanJoin = false,
+                });
+            }
+        }
+
         list.Sort((a, b) => b.CreatedAt.CompareTo(a.CreatedAt));
         return Ok(list.Take(100).ToList());
     }

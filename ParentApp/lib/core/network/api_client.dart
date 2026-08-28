@@ -63,4 +63,30 @@ class ApiClient {
   }();
 
   Dio get dio => _dio;
+
+  /// GET that returns raw text (e.g. HTML certificate).
+  Future<String> getText(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    String accept = 'text/html',
+  }) async {
+    try {
+      final response = await _dio.get<String>(
+        path,
+        queryParameters: queryParameters,
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: {'Accept': accept},
+        ),
+      );
+      final text = response.data;
+      if (text == null || text.trim().isEmpty) {
+        throw ApiException(message: 'استجابة فارغة من الخادم');
+      }
+      return text;
+    } on DioException catch (e) {
+      if (e.error is ApiException) throw e.error as ApiException;
+      throw ApiException.fromDioException(e);
+    }
+  }
 }

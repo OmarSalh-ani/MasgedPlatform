@@ -2,6 +2,8 @@ namespace AdminAPI.DTOs.Home;
 
 public class HomeStudentTestDto
 {
+    public int TestId { get; set; }
+
     public string TestName { get; set; } = string.Empty;
     public string TestType { get; set; } = string.Empty;
     public string From { get; set; } = string.Empty;

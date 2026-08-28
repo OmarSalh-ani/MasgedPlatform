@@ -103,7 +103,8 @@ public sealed partial class AdminPushNotificationService(
             title,
             body,
             DeviceTokenKind.Teacher,
-            cancellationToken);
+            "admin broadcast",
+            cancellationToken: cancellationToken);
 
         return BuildResult(teacherIds.Count, teachersWithTokens, tokens.Count, successCount, failureCount);
     }
@@ -144,6 +145,55 @@ public sealed partial class AdminPushNotificationService(
             title,
             body,
             DeviceTokenKind.Parent,
+            "admin broadcast",
+            cancellationToken: cancellationToken);
+
+        return BuildResult(phones.Count, phonesWithTokens, tokens.Count, successCount, failureCount);
+    }
+
+    public async Task<SendAdminPushNotificationResultDto> SendToParentPhonesAsync(
+        IReadOnlyList<string> phones,
+        string title,
+        string body,
+        IReadOnlyDictionary<string, string> data,
+        string context,
+        CancellationToken cancellationToken = default)
+    {
+        if (phones.Count == 0)
+            throw new ValidationException("لا يوجد أولياء أمور مستهدفون");
+
+        var phoneVariants = phones
+            .SelectMany(PhoneNormalizer.GetVariants)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        var matchedPhones = await db.ParentDeviceTokens
+            .AsNoTracking()
+            .Where(t => phoneVariants.Contains(t.ParentPhone))
+            .Select(t => t.ParentPhone)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var tokens = await db.ParentDeviceTokens
+            .AsNoTracking()
+            .Where(t => phoneVariants.Contains(t.ParentPhone))
+            .Select(t => t.FcmToken)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var phonesWithTokens = CountPhonesWithTokens(phones, matchedPhones);
+        var channelId = data.TryGetValue("kind", out var kind) && kind == "test_certificate"
+            ? "masged_certificates"
+            : "masged_admin";
+
+        var (successCount, failureCount) = await SendAdminMulticastAsync(
+            tokens,
+            title,
+            body,
+            DeviceTokenKind.Parent,
+            context,
+            data,
+            channelId,
             cancellationToken);
 
         return BuildResult(phones.Count, phonesWithTokens, tokens.Count, successCount, failureCount);

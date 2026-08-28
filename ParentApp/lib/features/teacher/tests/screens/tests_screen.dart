@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:masged_parent_app/core/theme/app_fonts.dart';
 import 'package:flutter/services.dart';
@@ -162,15 +163,32 @@ class _TestsScreenState extends ConsumerState<TestsScreen> {
             test.testId,
             testPeriod: period,
           );
-      await openCertificateForPrint(
+      final size = MediaQuery.sizeOf(context);
+      final shareOrigin = Rect.fromCenter(
+        center: Offset(size.width / 2, size.height / 2),
+        width: 1,
+        height: 1,
+      );
+      final message = await openCertificateForPrint(
         html,
         title: 'شهادة ${test.surahName}',
+        sharePositionOrigin: shareOrigin,
       );
+      if (mounted) _showMessage(message);
     } on ApiException catch (e) {
       if (mounted) _showMessage(e.message, isError: true);
-    } catch (_) {
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint('Certificate print failed: $e\n$stack');
+      }
       if (mounted) {
-        _showMessage('تعذر تحميل الشهادة للطباعة', isError: true);
+        final detail = e.toString().trim();
+        _showMessage(
+          kDebugMode && detail.isNotEmpty
+              ? 'تعذر تحميل الشهادة للطباعة: $detail'
+              : 'تعذر تحميل الشهادة للطباعة',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _printingTestId = null);

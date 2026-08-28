@@ -17,6 +17,7 @@ import 'core/services/push_notification_service.dart';
 import 'features/video_call/utils/parent_video_call_launcher.dart';
 import 'features/chat/utils/chat_notification_launcher.dart';
 import 'features/adhkar/utils/adhkar_notification_launcher.dart';
+import 'features/test_certificates/utils/test_certificate_notification_launcher.dart';
 import 'features/adhkar/services/adhkar_notification_service.dart';
 import 'features/adhkar/services/adhkar_progress_service.dart';
 import 'features/teacher/session/teacher_session_cache.dart';
@@ -110,6 +111,15 @@ class _MasgedUnifiedAppState extends ConsumerState<MasgedUnifiedApp>
             onAdhkarOpened: (groupId) {
               unawaited(openAdhkarFromPushNotification(ref, groupId));
             },
+            onTestCertificateOpened: ({required testId, studentId}) {
+              unawaited(
+                openTestCertificateFromPushNotification(
+                  ref,
+                  testId: testId,
+                  studentId: studentId,
+                ),
+              );
+            },
           ),
     );
   }
@@ -186,6 +196,15 @@ class _MasgedUnifiedAppState extends ConsumerState<MasgedUnifiedApp>
                   onChatTap: (target) {
                     unawaited(openChatFromPushNotification(ref, target));
                   },
+                  onTestCertificateTap: ({required testId, studentId}) {
+                    unawaited(
+                      openTestCertificateFromPushNotification(
+                        ref,
+                        testId: testId,
+                        studentId: studentId,
+                      ),
+                    );
+                  },
                 ),
               ),
             );
@@ -203,11 +222,13 @@ class _AppRootOverlay extends ConsumerWidget {
     required this.navigatorChild,
     required this.onMeetingTap,
     required this.onChatTap,
+    required this.onTestCertificateTap,
   });
 
   final Widget? navigatorChild;
   final void Function(int meetingId) onMeetingTap;
   final void Function(ChatPushTarget target) onChatTap;
+  final void Function({required int testId, int? studentId}) onTestCertificateTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -224,6 +245,7 @@ class _AppRootOverlay extends ConsumerWidget {
         ForegroundPushBanner(
           onMeetingTap: onMeetingTap,
           onChatTap: onChatTap,
+          onTestCertificateTap: onTestCertificateTap,
         ),
         if (!isOnline)
           const Positioned(

@@ -17,4 +17,12 @@ public interface IAdminPushNotificationService
     Task<SendAdminPushNotificationResultDto> SendAsync(
         SendAdminPushNotificationRequestDto request,
         CancellationToken cancellationToken = default);
+
+    Task<SendAdminPushNotificationResultDto> SendToParentPhonesAsync(
+        IReadOnlyList<string> phones,
+        string title,
+        string body,
+        IReadOnlyDictionary<string, string> data,
+        string context,
+        CancellationToken cancellationToken = default);
 }

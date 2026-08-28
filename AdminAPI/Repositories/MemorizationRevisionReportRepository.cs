@@ -46,7 +46,9 @@ public class MemorizationRevisionReportRepository(AdminDbContext db) : IMemoriza
             .Select(x => new MemorizationRevisionPlanRowDto
             {
                 Status = x.Status ?? DefaultStatus,
-                SurahNameAr = x.QuranSurah.NameAr,
+                SurahNameAr = x.MemorizationLevel.StartsWith("__manual__:")
+                    ? x.MemorizationLevel.Substring("__manual__:".Length)
+                    : x.QuranSurah.NameAr,
                 StudentName = x.RegisterForm.StudentName,
                 FromAyah = x.FromAyahNumber,
                 ToAyah = x.ToAyahNumber,
@@ -60,7 +62,9 @@ public class MemorizationRevisionReportRepository(AdminDbContext db) : IMemoriza
             .Select(x => new MemorizationRevisionPlanRowDto
             {
                 Status = x.Status ?? DefaultStatus,
-                SurahNameAr = x.QuranSurah.NameAr,
+                SurahNameAr = x.MemorizationLevel.StartsWith("__manual__:")
+                    ? x.MemorizationLevel.Substring("__manual__:".Length)
+                    : x.QuranSurah.NameAr,
                 StudentName = x.RegisterForm.StudentName,
                 FromAyah = x.FromAyahNumber,
                 ToAyah = x.ToAyahNumber,

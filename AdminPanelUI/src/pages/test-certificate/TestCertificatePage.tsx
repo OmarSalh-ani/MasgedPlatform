@@ -9,6 +9,7 @@ import {
   calculateTotalAndGrade,
   formatScore,
 } from '@/pages/test-certificate/testCertificateUtils'
+import { TestCertificateNotifySection } from '@/pages/test-certificate/TestCertificateNotifySection'
 import '@/pages/test-certificate/testCertificate.css'
 
 export function TestCertificatePage() {
@@ -66,6 +67,12 @@ export function TestCertificatePage() {
 
   return (
     <div className="test-certificate-page" dir="rtl">
+      <TestCertificateNotifySection
+        testId={certificate.testId}
+        studentName={certificate.studentName}
+        grade={scores.grade}
+      />
+
       <div className="no-print mb-4 flex justify-center">
         <Button type="button" onClick={() => window.print()}>
           طباعة الشهادة

@@ -46,6 +46,7 @@ import 'package:masged_parent_app/shared/widgets/main_scaffold.dart';
 
 import '../../features/children/screens/add_child_screen.dart';
 import '../../features/home/screens/services_screen.dart';
+import '../../features/test_certificates/screens/test_certificates_screen.dart';
 import 'package:masged_parent_app/shared/router/app_routes.dart';
 
 /// go_router may already decode path segments; decoding again throws when the
@@ -457,6 +458,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.testCertificates,
+        builder: (context, state) {
+          final studentId =
+              int.tryParse(state.uri.queryParameters['studentId'] ?? '');
+          final testId = int.tryParse(state.uri.queryParameters['testId'] ?? '');
+          return TestCertificatesScreen(
+            initialStudentId: studentId,
+            initialTestId: testId,
+          );
+        },
       ),
     ],
   );
