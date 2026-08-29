@@ -28,6 +28,7 @@ Future<void> shareExportedFile({
           mimeType: mimeType,
         ),
       ],
+      fileNameOverrides: [safeName],
       subject: subject,
       text: text,
       downloadFallbackEnabled: true,

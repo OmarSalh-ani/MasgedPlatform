@@ -89,4 +89,43 @@ class ApiClient {
       throw ApiException.fromDioException(e);
     }
   }
+
+  /// GET that returns raw file bytes (PDF exports).
+  Future<({List<int> bytes, String? fileName})> getBytes(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        queryParameters: queryParameters,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {'Accept': 'application/pdf'},
+        ),
+      );
+      final bytes = response.data;
+      if (bytes == null || bytes.isEmpty) {
+        throw ApiException('استجابة فارغة من الخادم');
+      }
+
+      String? fileName;
+      final disposition = response.headers.value('content-disposition');
+      if (disposition != null && disposition.isNotEmpty) {
+        final utf8Match =
+            RegExp(r"filename\*=UTF-8''([^;]+)").firstMatch(disposition);
+        final plainMatch =
+            RegExp(r'filename="?([^";]+)"?').firstMatch(disposition);
+        final raw = utf8Match?.group(1) ?? plainMatch?.group(1);
+        if (raw != null && raw.isNotEmpty) {
+          fileName = Uri.decodeComponent(raw.trim());
+        }
+      }
+
+      return (bytes: bytes, fileName: fileName);
+    } on DioException catch (e) {
+      if (e.error is ApiException) throw e.error as ApiException;
+      throw ApiException.fromDioException(e);
+    }
+  }
 }

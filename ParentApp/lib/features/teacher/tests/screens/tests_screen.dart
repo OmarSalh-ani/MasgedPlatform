@@ -8,7 +8,7 @@ import 'package:masged_parent_app/teacher_core/network/api_exception.dart';
 import 'package:masged_parent_app/core/theme/app_colors.dart';
 import 'package:masged_parent_app/shared/widgets/custom_button.dart';
 import 'package:masged_parent_app/shared/widgets/custom_text_field.dart';
-import '../helpers/certificate_printer.dart';
+import '../helpers/download_certificate_pdf.dart';
 import '../models/student_test_models.dart';
 import '../models/test_certificate_models.dart';
 import '../providers/student_tests_providers.dart';
@@ -153,40 +153,33 @@ class _TestsScreenState extends ConsumerState<TestsScreen> {
     _calculateScore();
   }
 
-  Future<void> _printCertificate(StudentTestDetail test) async {
+  Future<void> _downloadCertificate(StudentTestDetail test) async {
     final period = await _pickTestPeriod();
     if (period == null || !mounted) return;
 
     setState(() => _printingTestId = test.testId);
     try {
-      final html = await ref.read(testCertificateApiProvider).getCertificateHtml(
+      final file = await ref.read(testCertificateApiProvider).getCertificatePdf(
             test.testId,
             testPeriod: period,
           );
-      final size = MediaQuery.sizeOf(context);
-      final shareOrigin = Rect.fromCenter(
-        center: Offset(size.width / 2, size.height / 2),
-        width: 1,
-        height: 1,
-      );
-      final message = await openCertificateForPrint(
-        html,
-        title: 'شهادة ${test.surahName}',
-        sharePositionOrigin: shareOrigin,
+      final message = await downloadCertificatePdf(
+        bytes: file.bytes,
+        fileName: file.fileName,
       );
       if (mounted) _showMessage(message);
     } on ApiException catch (e) {
       if (mounted) _showMessage(e.message, isError: true);
     } catch (e, stack) {
       if (kDebugMode) {
-        debugPrint('Certificate print failed: $e\n$stack');
+        debugPrint('Certificate download failed: $e\n$stack');
       }
       if (mounted) {
         final detail = e.toString().trim();
         _showMessage(
           kDebugMode && detail.isNotEmpty
-              ? 'تعذر تحميل الشهادة للطباعة: $detail'
-              : 'تعذر تحميل الشهادة للطباعة',
+              ? 'تعذر تحميل الشهادة: $detail'
+              : 'تعذر تحميل الشهادة',
           isError: true,
         );
       }
@@ -835,12 +828,12 @@ class _TestsScreenState extends ConsumerState<TestsScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : IconButton(
-                          tooltip: 'طباعة الشهادة',
+                          tooltip: 'تحميل الشهادة',
                           icon: const Icon(
-                            Icons.print,
+                            Icons.download,
                             color: AppColors.primary,
                           ),
-                          onPressed: () => _printCertificate(test),
+                          onPressed: () => _downloadCertificate(test),
                         ),
                 ),
               ],

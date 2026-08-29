@@ -16,4 +16,7 @@ public static class ReportFileDownloadHelper
         var stamp = KuwaitTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
         return $"circle_memorization_report_{stamp}.{extension.TrimStart('.')}";
     }
+
+    public static string BuildTestCertificateFileName(int testId) =>
+        $"test_certificate_{testId}_{KuwaitTime.Now:yyyyMMdd_HHmmss}.pdf";
 }

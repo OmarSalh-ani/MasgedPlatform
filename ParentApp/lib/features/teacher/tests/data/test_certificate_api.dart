@@ -1,3 +1,4 @@
+import 'package:masged_parent_app/core/platform/export_file_name.dart';
 import 'package:masged_parent_app/teacher_core/network/api_client.dart';
 import '../models/test_certificate_models.dart';
 
@@ -18,13 +19,22 @@ class TestCertificateApi {
     );
   }
 
-  Future<String> getCertificateHtml(
+  Future<({List<int> bytes, String fileName})> getCertificatePdf(
     int testId, {
     String testPeriod = 'الفصل الأول',
-  }) {
-    return _client.getText(
-      '/api/test-certificates/$testId/html',
+  }) async {
+    final result = await _client.getBytes(
+      '/api/test-certificates/$testId/pdf',
       queryParameters: {'testPeriod': testPeriod},
+    );
+
+    return (
+      bytes: result.bytes,
+      fileName: resolveExportFileName(
+        serverFileName: result.fileName,
+        fallbackBaseName: 'test_certificate',
+        extension: 'pdf',
+      ),
     );
   }
 }

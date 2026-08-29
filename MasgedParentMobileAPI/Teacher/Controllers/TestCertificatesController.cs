@@ -50,6 +50,24 @@ public class TestCertificatesController(AppDbContext db, IConfiguration configur
         return Content(html, "text/html; charset=utf-8");
     }
 
+    [HttpGet("{testId:int}/pdf")]
+    [Produces("application/pdf")]
+    public async Task<IActionResult> GetCertificatePdf(
+        int testId,
+        [FromQuery] string? testPeriod,
+        CancellationToken cancellationToken)
+    {
+        var result = await LoadCertificateAsync(testId, testPeriod, cancellationToken);
+        if (result.Error is not null)
+            return result.Error;
+
+        var bytes = TestCertificatePdfExporter.Build(result.Dto!);
+        return ReportFileDownloadHelper.Create(
+            bytes,
+            "application/pdf",
+            ReportFileDownloadHelper.BuildTestCertificateFileName(testId));
+    }
+
     private async Task<CertificateLoadResult> LoadCertificateAsync(
         int testId,
         string? testPeriod,

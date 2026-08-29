@@ -28,6 +28,7 @@ Future<void> shareExportedFile({
           name: safeName,
         ),
       ],
+      fileNameOverrides: [safeName],
       subject: subject,
       text: text,
       sharePositionOrigin: sharePositionOrigin,

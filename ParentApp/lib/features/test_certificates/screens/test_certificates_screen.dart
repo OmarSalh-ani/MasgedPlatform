@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:masged_parent_app/core/theme/app_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../teacher/tests/helpers/certificate_printer.dart';
+import '../../teacher/tests/helpers/download_certificate_pdf.dart';
 import '../models/parent_test_certificate_models.dart';
 import '../providers/test_certificates_provider.dart';
 
@@ -33,23 +33,16 @@ class _TestCertificatesScreenState extends ConsumerState<TestCertificatesScreen>
     _selectedStudentId = widget.initialStudentId;
   }
 
-  Future<void> _openCertificate(ParentTestCertificateListItem item) async {
+  Future<void> _downloadCertificate(ParentTestCertificateListItem item) async {
     if (_printingTestId != null) return;
     setState(() => _printingTestId = item.testId);
     try {
-      final html = await ref
+      final file = await ref
           .read(parentTestCertificateApiProvider)
-          .getCertificateHtml(item.testId);
-      final size = MediaQuery.sizeOf(context);
-      final shareOrigin = Rect.fromCenter(
-        center: Offset(size.width / 2, size.height / 2),
-        width: 1,
-        height: 1,
-      );
-      final message = await openCertificateForPrint(
-        html,
-        title: 'شهادة اختبار — ${item.studentName}',
-        sharePositionOrigin: shareOrigin,
+          .getCertificatePdf(item.testId);
+      final message = await downloadCertificatePdf(
+        bytes: file.bytes,
+        fileName: file.fileName,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -126,7 +119,7 @@ class _TestCertificatesScreenState extends ConsumerState<TestCertificatesScreen>
               if (target != null) {
                 _didAutoOpen = true;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _openCertificate(target!);
+                  _downloadCertificate(target!);
                 });
               }
             }
@@ -184,7 +177,7 @@ class _TestCertificatesScreenState extends ConsumerState<TestCertificatesScreen>
                         child: _CertificateCard(
                           item: item,
                           isPrinting: _printingTestId == item.testId,
-                          onOpen: () => _openCertificate(item),
+                          onOpen: () => _downloadCertificate(item),
                         ),
                       ),
                     ),
@@ -269,7 +262,7 @@ class _CertificateCard extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               else
-                const Icon(Icons.print_rounded, color: AppColors.primary),
+                const Icon(Icons.download_rounded, color: AppColors.primary),
             ],
           ),
         ),
