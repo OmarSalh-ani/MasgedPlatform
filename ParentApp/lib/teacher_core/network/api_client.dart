@@ -152,6 +152,24 @@ class TeacherApiClient {
     }
   }
 
+  /// Builds an authenticated browser URL for file download fallbacks.
+  Future<String> buildAuthenticatedDownloadUrl(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final token = await _authStorage.getToken();
+    final params = queryParameters ?? const <String, dynamic>{};
+    final query = <String, String>{
+      for (final entry in params.entries)
+        if (entry.value != null) entry.key: entry.value.toString(),
+      if (token != null && token.isNotEmpty) 'access_token': token,
+    };
+
+    return Uri.parse('${UnifiedApiConfig.teacherBaseUrl}${_resolvePath(path)}')
+        .replace(queryParameters: query.isEmpty ? null : query)
+        .toString();
+  }
+
   Future<void> postVoid(String path, {Map<String, dynamic>? body}) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(

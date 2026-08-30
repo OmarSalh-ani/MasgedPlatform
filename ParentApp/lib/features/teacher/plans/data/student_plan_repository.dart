@@ -57,6 +57,9 @@ class StudentPlanRepository {
         planEndDate: planEndDate,
       );
 
+  Future<String> closeExpiredPlan(int studentId, int planId) =>
+      _api.closeExpiredPlan(studentId, planId);
+
   Future<String> logRowStatus({
     required int studentId,
     required String rowKey,

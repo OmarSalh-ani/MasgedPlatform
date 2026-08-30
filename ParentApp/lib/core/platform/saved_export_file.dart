@@ -17,6 +17,6 @@ class SavedExportFileResult {
   String get userMessage => switch (location) {
         SavedExportLocation.downloads => 'تم حفظ الملف في مجلد التنزيلات',
         SavedExportLocation.appDocuments =>
-          'تم حفظ الملف داخل التطبيق (الملفات)',
+          'تم حفظ الملف. افتحه من مدير الملفات داخل مجلد التطبيق',
       };
 }

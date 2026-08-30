@@ -175,6 +175,9 @@ class StudentPlanDetail {
     required this.currentMemorizing,
     required this.allRows,
     required this.plans,
+    this.isExpired = false,
+    this.hasPendingRows = false,
+    this.requiresExpiryAction = false,
   });
 
   final int studentId;
@@ -188,6 +191,9 @@ class StudentPlanDetail {
   final PlanRow? currentMemorizing;
   final List<PlanRow> allRows;
   final List<StudentPlanSummary> plans;
+  final bool isExpired;
+  final bool hasPendingRows;
+  final bool requiresExpiryAction;
 
   factory StudentPlanDetail.fromJson(Map<String, dynamic> json) {
     final allRowsJson = json['allRows'] as List<dynamic>? ?? [];
@@ -213,6 +219,9 @@ class StudentPlanDetail {
       plans: plansJson
           .map((e) => StudentPlanSummary.fromJson(e as Map<String, dynamic>))
           .toList(),
+      isExpired: json['isExpired'] as bool? ?? false,
+      hasPendingRows: json['hasPendingRows'] as bool? ?? false,
+      requiresExpiryAction: json['requiresExpiryAction'] as bool? ?? false,
     );
   }
 }
@@ -324,21 +333,35 @@ class BulkAssignPlanRequest {
     required this.rows,
     this.addToExistingPlan = false,
     this.planName,
+    this.planStartDate,
+    this.planEndDate,
   });
 
   final List<int> studentIds;
   final List<PlanRowInput> rows;
   final bool addToExistingPlan;
   final String? planName;
+  final DateTime? planStartDate;
+  final DateTime? planEndDate;
 
   Map<String, dynamic> toJson() => {
         'studentIds': studentIds,
         'addToExistingPlan': addToExistingPlan,
         'plan': {
           if (planName != null && planName!.isNotEmpty) 'planName': planName,
+          if (planStartDate != null)
+            'planStartDate': _formatDate(planStartDate!),
+          if (planEndDate != null) 'planEndDate': _formatDate(planEndDate!),
           'rows': rows.map((r) => r.toJson()).toList(),
         },
       };
+
+  static String _formatDate(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
 }
 
 class BulkAssignPlanStudentResult {

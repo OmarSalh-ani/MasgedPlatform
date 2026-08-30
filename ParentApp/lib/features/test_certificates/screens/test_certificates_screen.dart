@@ -37,12 +37,11 @@ class _TestCertificatesScreenState extends ConsumerState<TestCertificatesScreen>
     if (_printingTestId != null) return;
     setState(() => _printingTestId = item.testId);
     try {
-      final file = await ref
-          .read(parentTestCertificateApiProvider)
-          .getCertificatePdf(item.testId);
-      final message = await downloadCertificatePdf(
-        bytes: file.bytes,
-        fileName: file.fileName,
+      final api = ref.read(parentTestCertificateApiProvider);
+      final browserUrl = await api.buildPdfBrowserUrl(item.testId);
+      final message = await downloadCertificatePdfWithFallback(
+        fetchPdf: () => api.getCertificatePdf(item.testId),
+        browserPdfUrl: browserUrl,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

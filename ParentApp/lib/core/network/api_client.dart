@@ -128,4 +128,23 @@ class ApiClient {
       throw ApiException.fromDioException(e);
     }
   }
+
+  /// Builds an authenticated browser URL for file download fallbacks.
+  Future<String> buildAuthenticatedDownloadUrl(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(AppConstants.keyAuthToken);
+    final params = queryParameters ?? const <String, dynamic>{};
+    final query = <String, String>{
+      for (final entry in params.entries)
+        if (entry.value != null) entry.key: entry.value.toString(),
+      if (token != null && token.isNotEmpty) 'access_token': token,
+    };
+
+    return Uri.parse('${AppConstants.apiBaseUrl}$path')
+        .replace(queryParameters: query.isEmpty ? null : query)
+        .toString();
+  }
 }

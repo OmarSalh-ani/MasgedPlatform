@@ -11,6 +11,7 @@ import '../models/student_plan_models.dart';
 import '../providers/student_plan_providers.dart';
 import '../widgets/plan_add_form_card.dart';
 import '../widgets/edit_plan_row_sheet.dart';
+import '../widgets/plan_expired_sheet.dart';
 
 class StudentPlanScreen extends ConsumerStatefulWidget {
   const StudentPlanScreen({
@@ -41,6 +42,7 @@ class _StudentPlanScreenState extends ConsumerState<StudentPlanScreen>
   DateTime? _loadedEndDate;
 
   int? _syncedPlanId;
+  int? _expiryPromptPlanId;
 
   bool _isSaving = false;
   String? _updatingRowKey;
@@ -101,7 +103,41 @@ class _StudentPlanScreenState extends ConsumerState<StudentPlanScreen>
     if (_planStartDate != null && _planEndDate != null) return;
     final today = DateTime.now();
     _planStartDate = today;
-    _planEndDate = today;
+    _planEndDate = today.add(const Duration(days: 7));
+  }
+
+  void _maybeShowExpiredPlanSheet(StudentPlanDetail detail) {
+    if (!detail.requiresExpiryAction) return;
+    if (_expiryPromptPlanId == detail.planId) return;
+    _expiryPromptPlanId = detail.planId;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _expiryPromptPlanId != detail.planId) return;
+      PlanExpiredSheet.show(
+        context,
+        studentId: widget.studentId,
+        detail: detail,
+        onMessage: _showMessage,
+        onResolved: _refresh,
+        onClosed: () {
+          setState(() {
+            _selectedPlanId = null;
+            _syncedPlanId = null;
+            _planStartDate = null;
+            _planEndDate = null;
+            _loadedStartDate = null;
+            _loadedEndDate = null;
+            _expiryPromptPlanId = null;
+            _editMode = false;
+          });
+          ref.invalidate(studentPlanOverviewProvider(widget.studentId));
+        },
+      ).then((_) {
+        if (mounted && _expiryPromptPlanId == detail.planId) {
+          setState(() => _expiryPromptPlanId = null);
+        }
+      });
+    });
   }
 
   bool get _datesChanged {
@@ -711,6 +747,7 @@ class _StudentPlanScreenState extends ConsumerState<StudentPlanScreen>
     PlanFormData formData,
   ) {
     _initDatesFromDetail(detail);
+    _maybeShowExpiredPlanSheet(detail);
 
     final displayName = detail.studentName.isNotEmpty
         ? detail.studentName
@@ -796,6 +833,7 @@ class _StudentPlanScreenState extends ConsumerState<StudentPlanScreen>
               _loadedEndDate = null;
               _planStartDate = null;
               _planEndDate = null;
+              _expiryPromptPlanId = null;
               _editMode = false;
             });
           },

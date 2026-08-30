@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:masged_parent_app/core/theme/app_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -30,10 +31,15 @@ class _BulkPlanAssignmentScreenState
   bool _addToExistingPlan = false;
   bool _isSaving = false;
   final _searchController = TextEditingController();
+  late DateTime _planStartDate;
+  late DateTime _planEndDate;
 
   @override
   void initState() {
     super.initState();
+    final today = DateTime.now();
+    _planStartDate = today;
+    _planEndDate = today.add(const Duration(days: 7));
     _selectedIds.addAll(widget.students.map((s) => s.id));
   }
 
@@ -72,6 +78,10 @@ class _BulkPlanAssignmentScreenState
       _showMessage('يرجى إضافة صفوف الخطة أولاً', isError: true);
       return;
     }
+    if (_planEndDate.isBefore(_planStartDate)) {
+      _showMessage('تاريخ النهاية يجب أن يكون بعد تاريخ البداية', isError: true);
+      return;
+    }
 
     setState(() => _isSaving = true);
     try {
@@ -80,6 +90,8 @@ class _BulkPlanAssignmentScreenState
               studentIds: _selectedIds.toList(),
               rows: _pendingRows,
               addToExistingPlan: _addToExistingPlan,
+              planStartDate: _planStartDate,
+              planEndDate: _planEndDate,
             ),
           );
 
@@ -167,6 +179,116 @@ class _BulkPlanAssignmentScreenState
     );
   }
 
+  String _formatDate(DateTime date) {
+    return intl.DateFormat('yyyy-MM-dd').format(date);
+  }
+
+  Future<void> _pickDate({required bool isStart}) async {
+    final initial = isStart ? _planStartDate : _planEndDate;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      if (isStart) {
+        _planStartDate = picked;
+        if (_planEndDate.isBefore(picked)) {
+          _planEndDate = picked;
+        }
+      } else {
+        _planEndDate = picked;
+        if (picked.isBefore(_planStartDate)) {
+          _planStartDate = picked;
+        }
+      }
+    });
+  }
+
+  Widget _buildPlanDatesCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.inputBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'فترة الخطة',
+            style: AppFonts.cairo(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildDateField(
+                  label: 'تاريخ البداية',
+                  value: _formatDate(_planStartDate),
+                  onTap: () => _pickDate(isStart: true),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDateField(
+                  label: 'تاريخ النهاية',
+                  value: _formatDate(_planEndDate),
+                  onTap: () => _pickDate(isStart: false),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppFonts.cairo(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.inputBorder),
+              borderRadius: BorderRadius.circular(10),
+              color: AppColors.inputFill,
+            ),
+            child: Text(
+              value,
+              style: AppFonts.cairo(fontSize: 14),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final formDataAsync = ref.watch(planFormDataProvider);
@@ -207,6 +329,8 @@ class _BulkPlanAssignmentScreenState
                       const SizedBox(height: 12),
                       _buildStudentList(filtered),
                       const SizedBox(height: 20),
+                      _buildPlanDatesCard(),
+                      const SizedBox(height: 16),
                       PlanAddFormCard(
                         surahs: formData.surahs,
                         onRowsAdded: (rows) =>

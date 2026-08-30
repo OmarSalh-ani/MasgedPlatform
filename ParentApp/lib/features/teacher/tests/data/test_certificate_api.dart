@@ -1,4 +1,5 @@
 import 'package:masged_parent_app/core/platform/export_file_name.dart';
+import 'package:masged_parent_app/core/platform/pdf_bytes.dart';
 import 'package:masged_parent_app/teacher_core/network/api_client.dart';
 import '../models/test_certificate_models.dart';
 
@@ -28,6 +29,8 @@ class TestCertificateApi {
       queryParameters: {'testPeriod': testPeriod},
     );
 
+    assertValidPdfBytes(result.bytes);
+
     return (
       bytes: result.bytes,
       fileName: resolveExportFileName(
@@ -35,6 +38,16 @@ class TestCertificateApi {
         fallbackBaseName: 'test_certificate',
         extension: 'pdf',
       ),
+    );
+  }
+
+  Future<String> buildPdfBrowserUrl(
+    int testId, {
+    String testPeriod = 'الفصل الأول',
+  }) {
+    return _client.buildAuthenticatedDownloadUrl(
+      '/api/test-certificates/$testId/pdf',
+      queryParameters: {'testPeriod': testPeriod},
     );
   }
 }

@@ -159,13 +159,12 @@ class _TestsScreenState extends ConsumerState<TestsScreen> {
 
     setState(() => _printingTestId = test.testId);
     try {
-      final file = await ref.read(testCertificateApiProvider).getCertificatePdf(
-            test.testId,
-            testPeriod: period,
-          );
-      final message = await downloadCertificatePdf(
-        bytes: file.bytes,
-        fileName: file.fileName,
+      final api = ref.read(testCertificateApiProvider);
+      final browserUrl =
+          await api.buildPdfBrowserUrl(test.testId, testPeriod: period);
+      final message = await downloadCertificatePdfWithFallback(
+        fetchPdf: () => api.getCertificatePdf(test.testId, testPeriod: period),
+        browserPdfUrl: browserUrl,
       );
       if (mounted) _showMessage(message);
     } on ApiException catch (e) {

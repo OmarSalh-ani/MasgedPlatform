@@ -16,22 +16,26 @@ Future<SavedExportFileResult> saveExportedFile({
     extension: fileName.contains('.') ? fileName.split('.').last : 'bin',
   );
 
-  final downloadsDir = await getDownloadsDirectory();
-  if (downloadsDir != null) {
-    try {
-      final path = await _writeUniqueFile(
-        directory: Directory(downloadsDir.path),
-        fileName: safeName,
-        bytes: bytes,
-      );
-      return SavedExportFileResult(
-        path: path,
-        fileName: safeName,
-        location: SavedExportLocation.downloads,
-      );
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('saveExportedFile downloads fallback: $e\n$stack');
+  // Android "downloads" from path_provider is app-private (Android/data/...),
+  // not the user-visible Downloads folder — skip it to avoid a fake success message.
+  if (!Platform.isAndroid) {
+    final downloadsDir = await getDownloadsDirectory();
+    if (downloadsDir != null) {
+      try {
+        final path = await _writeUniqueFile(
+          directory: Directory(downloadsDir.path),
+          fileName: safeName,
+          bytes: bytes,
+        );
+        return SavedExportFileResult(
+          path: path,
+          fileName: safeName,
+          location: SavedExportLocation.downloads,
+        );
+      } catch (e, stack) {
+        if (kDebugMode) {
+          debugPrint('saveExportedFile downloads fallback: $e\n$stack');
+        }
       }
     }
   }

@@ -91,6 +91,12 @@ class StudentPlanApi {
     );
   }
 
+  Future<String> closeExpiredPlan(int studentId, int planId) {
+    return _client.postCommand(
+      '/api/studentplan2/$studentId/plans/$planId/close-expired',
+    );
+  }
+
   static String _formatDate(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');
     final m = date.month.toString().padLeft(2, '0');
